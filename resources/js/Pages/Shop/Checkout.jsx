@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import axios from 'axios';
 import ShopLayout from '../../Layouts/ShopLayout';
+import ShopPageHeader from '../../Components/Shop/ShopPageHeader';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
@@ -85,8 +86,15 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
 
     return (
         <ShopLayout>
-            <div className="max-w-7xl mx-auto px-6 py-8">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Checkout</h1>
+            <ShopPageHeader
+                title="Checkout"
+                description="Complete your order with delivery details and payment."
+                breadcrumbs={[
+                    { label: 'Shop', href: '/shop/products' },
+                    { label: 'Cart', href: '/shop/cart' },
+                    { label: 'Checkout' },
+                ]}
+            />
 
                 <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-6">
@@ -222,7 +230,6 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
                         </Card>
                     </div>
                 </form>
-            </div>
         </ShopLayout>
     );
 }

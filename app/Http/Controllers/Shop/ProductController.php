@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
-use App\Models\Category;
 use App\Models\Product;
 use App\Services\Commerce\RecentlyViewedService;
+use App\Services\Commerce\ShopCatalogService;
 use App\Services\Marketing\FlashSaleService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,26 +17,33 @@ class ProductController extends Controller
     public function __construct(
         protected FlashSaleService $flashSales,
         protected RecentlyViewedService $recentlyViewed,
+        protected ShopCatalogService $catalog,
     ) {}
 
     public function index(Request $request): Response
     {
-        $products = Product::query()
-            ->published()
-            ->with(['category:id,name', 'brand:id,name', 'images'])
-            ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
-            ->when($request->category, fn ($q, $c) => $q->where('category_id', $c))
-            ->when($request->featured, fn ($q) => $q->where('is_featured', true))
-            ->latest()
-            ->paginate(12)
-            ->withQueryString();
+        $query = $this->catalog->applyFilters($this->catalog->baseQuery(), $request);
+
+        $products = $query->paginate(12)->withQueryString();
 
         $this->flashSales->hydrateCache($products->pluck('id')->all());
 
+        $categories = $this->catalog->categoriesWithCounts();
+        $priceBounds = $this->catalog->priceBounds();
+
         return Inertia::render('Shop/Products/Index', [
             'products' => ProductResource::collection($products),
-            'categories' => Category::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'filters' => $request->only(['search', 'category', 'featured']),
+            'categories' => $categories,
+            'catalogMeta' => [
+                'total_products' => $this->catalog->totalPublishedCount(),
+                'price_min' => $priceBounds['min'],
+                'price_max' => $priceBounds['max'],
+                'rating_counts' => $this->catalog->ratingCounts(),
+            ],
+            'filters' => $request->only($this->catalog->filterKeys()),
+            'wishlistProductIds' => $request->user()
+                ? $request->user()->wishlists()->pluck('product_id')->all()
+                : [],
         ]);
     }
 
@@ -46,12 +53,17 @@ class ProductController extends Controller
             ->published()
             ->where('slug', $slug)
             ->with(['category', 'brand', 'images', 'variants'])
+            ->withAvg(['approvedReviews as avg_rating'], 'rating')
+            ->withCount('approvedReviews as reviews_count')
             ->firstOrFail();
 
         $related = Product::query()
             ->published()
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
+            ->with(['category:id,name', 'brand:id,name', 'images'])
+            ->withAvg(['approvedReviews as avg_rating'], 'rating')
+            ->withCount('approvedReviews as reviews_count')
             ->limit(4)
             ->get();
 
@@ -74,7 +86,7 @@ class ProductController extends Controller
                 'comment' => $r->comment,
                 'created_at' => $r->created_at?->toISOString(),
             ]),
-            'avgRating' => round($product->approvedReviews()->avg('rating') ?? 0, 1),
+            'avgRating' => round($product->avg_rating ?? $product->approvedReviews()->avg('rating') ?? 0, 1),
             'inWishlist' => $request->user()
                 ? $request->user()->wishlists()->where('product_id', $product->id)->exists()
                 : false,

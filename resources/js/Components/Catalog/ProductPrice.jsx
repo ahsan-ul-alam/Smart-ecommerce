@@ -7,7 +7,7 @@ export default function ProductPrice({ product, size = 'md' }) {
 
     return (
         <div className="flex items-baseline gap-2 flex-wrap">
-            <span className={`font-bold text-teal-700 ${priceClass}`}>{formatPrice(product.price)}</span>
+            <span className={`font-bold text-primary ${priceClass}`}>{formatPrice(product.price)}</span>
             {product.on_sale && product.original_price && (
                 <>
                     <span className={`text-slate-400 line-through ${size === 'lg' ? 'text-lg' : 'text-sm'}`}>

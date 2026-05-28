@@ -2,6 +2,8 @@ import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { ShoppingCart, Minus, Plus, Heart, Star } from 'lucide-react';
 import { useState } from 'react';
 import ShopLayout from '../../../Layouts/ShopLayout';
+import ShopBreadcrumbs from '../../../Components/Shop/ShopBreadcrumbs';
+import ProductCard from '../../../Components/Shop/ProductCard';
 import ProductThumbnail from '../../../Components/Catalog/ProductThumbnail';
 import ProductPrice from '../../../Components/Catalog/ProductPrice';
 import Button from '../../../Components/UI/Button';
@@ -59,10 +61,16 @@ export default function ProductShow({ product, related, recentlyViewed = [], rev
 
     return (
         <ShopLayout>
-            <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <ShopBreadcrumbs
+                items={[
+                    { label: 'Shop', href: '/shop/products' },
+                    ...(product.category ? [{ label: product.category.name, href: `/shop/products?category=${product.category.id}` }] : []),
+                    { label: product.name },
+                ]}
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                     <div className="space-y-3">
-                        <div className="aspect-square bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden">
+                        <div className="aspect-square surface-card overflow-hidden">
                             {activeImage ? (
                                 <img src={activeImage} alt={product.name} className="w-full h-full object-cover" />
                             ) : (
@@ -87,8 +95,7 @@ export default function ProductShow({ product, related, recentlyViewed = [], rev
                     <div>
                         <div className="flex gap-2 mb-2 flex-wrap">
                             {product.is_featured && <Badge variant="info">Featured</Badge>}
-                            <Badge variant={product.status === 'published' ? 'success' : 'default'}>{product.status}</Badge>
-                            {product.is_low_stock && <Badge variant="warning">Low Stock</Badge>}
+                            {product.is_low_stock && <Badge variant="warning">Low stock</Badge>}
                         </div>
                         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{product.name}</h1>
                         <p className="text-sm text-slate-500 mt-1">SKU: {product.sku}</p>
@@ -161,12 +168,12 @@ export default function ProductShow({ product, related, recentlyViewed = [], rev
                     </div>
                 </div>
 
-                <section className="mt-16">
-                    <h2 className="text-xl font-bold mb-6">Customer Reviews</h2>
+            <section className="mt-14 pt-10 border-t border-slate-200/80 dark:border-slate-700/80">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Customer reviews</h2>
                     {reviews.length > 0 ? (
                         <div className="space-y-4 mb-8">
                             {reviews.map((r) => (
-                                <div key={r.id} className="bg-white dark:bg-slate-800 rounded-xl border p-4">
+                                <div key={r.id} className="surface-card p-4">
                                     <div className="flex items-center gap-2">
                                         <span className="font-medium">{r.name}</span>
                                         <span className="text-amber-500 text-sm">{'★'.repeat(r.rating)}</span>
@@ -180,7 +187,7 @@ export default function ProductShow({ product, related, recentlyViewed = [], rev
                     )}
 
                     {auth.user ? (
-                        <form onSubmit={submitReview} className="bg-white dark:bg-slate-800 rounded-xl border p-6 max-w-lg space-y-4">
+                        <form onSubmit={submitReview} className="surface-card p-6 max-w-lg space-y-4">
                             <h3 className="font-semibold">Write a Review</h3>
                             <Select
                                 label="Rating"
@@ -205,24 +212,15 @@ export default function ProductShow({ product, related, recentlyViewed = [], rev
                 )}
 
                 {related?.length > 0 && (
-                    <section className="mt-16">
-                        <h2 className="text-xl font-bold mb-6">Related Products</h2>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <section className="mt-14">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">You may also like</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                             {related.map((p) => (
-                                <Link key={p.id} href={`/shop/products/${p.slug}`} className="bg-white dark:bg-slate-800 rounded-xl border overflow-hidden hover:shadow-md">
-                                    <div className="aspect-square">
-                                        <ProductThumbnail product={p} />
-                                    </div>
-                                    <div className="p-4">
-                                        <p className="font-medium text-sm line-clamp-2">{p.name}</p>
-                                        <div className="mt-1"><ProductPrice product={p} size="sm" /></div>
-                                    </div>
-                                </Link>
+                                <ProductCard key={p.id} product={p} showQuickView={false} />
                             ))}
                         </div>
                     </section>
                 )}
-            </div>
         </ShopLayout>
     );
 }

@@ -60,48 +60,12 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\ContactInquiryController;
 use App\Http\Controllers\Shop\ContactController as ShopContactController;
+use App\Http\Controllers\Shop\HomeController;
 use App\Http\Controllers\Shop\LocationController;
-use App\Models\Banner;
-use App\Models\HomepageSection;
-use App\Models\Product;
-use App\Models\Vendor;
-use App\Services\Modules\ModuleService;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    $featured = Product::query()->published()->where('is_featured', true)->with('images')->limit(12)->get();
-    $banners = Banner::query()->where('is_active', true)->where('position', 'homepage')->orderBy('sort_order')->get();
-
-    $flashSales = app(\App\Services\Marketing\FlashSaleService::class)->activeSales();
-    $flashProductIds = $flashSales->flatMap(fn ($s) => $s->products->pluck('id'))->unique()->take(8)->all();
-    $flashProducts = Product::query()->published()->whereIn('id', $flashProductIds)->with(['images'])->get();
-    app(\App\Services\Marketing\FlashSaleService::class)->hydrateCache($flashProducts->pluck('id')->all());
-
-    $sections = HomepageSection::query()->active()->ordered()->get();
-
-    $vendors = app(ModuleService::class)->isEnabled('vendor')
-        ? Vendor::query()->where('is_active', true)->has('products')->withCount('products')->orderBy('name')->limit(8)->get(['id', 'name', 'slug', 'logo'])
-        : collect();
-
-    $recentlyViewed = \App\Http\Resources\ProductResource::collection(
-        app(\App\Services\Commerce\RecentlyViewedService::class)->products(request(), null, 8)
-    )->resolve();
-
-    return Inertia::render('Shop/Home', [
-        'featured' => \App\Http\Resources\ProductResource::collection($featured)->resolve(),
-        'banners' => $banners,
-        'sections' => $sections,
-        'vendors' => $vendors,
-        'flashSale' => $flashSales->first() ? [
-            'title' => $flashSales->first()->title,
-            'slug' => $flashSales->first()->slug,
-            'ends_at' => $flashSales->first()->ends_at->toISOString(),
-        ] : null,
-        'flashProducts' => \App\Http\Resources\ProductResource::collection($flashProducts)->resolve(),
-        'recentlyViewed' => $recentlyViewed,
-    ]);
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\SpecialProduct;
+use App\Support\MediaUrl;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,7 +25,7 @@ class SpecialProductController extends Controller
                 'slug' => $page->slug,
                 'headline' => $page->headline,
                 'subheadline' => $page->subheadline,
-                'hero_image' => $page->hero_image,
+                'hero_image' => MediaUrl::resolve($page->hero_image),
                 'blocks' => $page->blocks ?? [],
                 'theme' => $page->theme ?? [],
                 'seo_title' => $page->seo_title,

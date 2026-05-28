@@ -22,7 +22,7 @@ export default function FlashMessage() {
     return (
         <div
             className={clsx(
-                'fixed top-4 right-4 z-[100] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm font-medium',
+                'fixed bottom-4 right-4 z-[100] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm font-medium',
                 'glass transition-opacity duration-200',
                 type === 'success' && 'text-emerald-900 dark:text-emerald-100',
                 type === 'error' && 'text-red-900 dark:text-red-100',

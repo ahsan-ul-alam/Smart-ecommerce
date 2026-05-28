@@ -10,6 +10,8 @@ export default function ProductThumbnail({ product, className = '', size = 'md' 
             <img
                 src={product.image}
                 alt={product.name}
+                loading="lazy"
+                decoding="async"
                 className={`object-cover w-full h-full ${className}`}
             />
         );

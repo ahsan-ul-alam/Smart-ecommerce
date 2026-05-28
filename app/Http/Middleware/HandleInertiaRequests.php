@@ -2,7 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Enums\ProductStatus;
+use App\Models\Category;
 use App\Models\Page;
+use App\Support\MediaUrl;
 use App\Services\Commerce\CartService;
 use App\Services\Marketing\CampaignService;
 use App\Services\Modules\ModuleService;
@@ -43,7 +46,7 @@ class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
-                    'avatar' => $request->user()->avatar,
+                    'avatar' => MediaUrl::resolve($request->user()->avatar),
                     'roles' => $request->user()->getRoleNames()->values()->all(),
                     'permissions' => $request->user()->getAllPermissions()->pluck('name')->values()->all(),
                 ] : null,
@@ -68,6 +71,21 @@ class HandleInertiaRequests extends Middleware
             'branding' => fn () => $settings->branding(),
             'modules' => fn () => $modules->enabledKeys(),
             'cart' => fn () => $this->sharedCartTotals($request),
+            'shopNav' => fn () => [
+                'categories' => Category::query()
+                    ->where('is_active', true)
+                    ->withCount(['products' => fn ($q) => $q->where('status', ProductStatus::Published)])
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->map(fn ($c) => [
+                        'id' => $c->id,
+                        'name' => $c->name,
+                        'products_count' => $c->products_count,
+                    ]),
+            ],
+            'wishlistCount' => fn () => $request->user()
+                ? $request->user()->wishlists()->count()
+                : 0,
             'footerPages' => fn () => Page::query()
                 ->where('is_published', true)
                 ->orderBy('title')

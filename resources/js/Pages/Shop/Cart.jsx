@@ -2,7 +2,10 @@ import { Link, router } from '@inertiajs/react';
 import { Minus, Plus, Trash2, Tag } from 'lucide-react';
 import { useState } from 'react';
 import ShopLayout from '../../Layouts/ShopLayout';
+import ShopPageHeader from '../../Components/Shop/ShopPageHeader';
 import Button from '../../Components/UI/Button';
+import EmptyState from '../../Components/UI/EmptyState';
+import { ShoppingBag } from 'lucide-react';
 import Input from '../../Components/UI/Input';
 import { Card, CardBody, CardHeader } from '../../Components/UI/Card';
 import ProductThumbnail from '../../Components/Catalog/ProductThumbnail';
@@ -27,16 +30,19 @@ export default function Cart({ cart }) {
 
     return (
         <ShopLayout>
-            <div className="max-w-7xl mx-auto px-6 py-8">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Shopping Cart</h1>
+            <ShopPageHeader
+                title="Shopping cart"
+                description={items.length ? `${items.length} item${items.length !== 1 ? 's' : ''} in your cart` : 'Your cart is waiting for your first item.'}
+                breadcrumbs={[{ label: 'Shop', href: '/shop/products' }, { label: 'Cart' }]}
+            />
 
                 {items.length === 0 ? (
-                    <div className="text-center py-16">
-                        <p className="text-slate-500 mb-4">Your cart is empty</p>
-                        <Link href="/shop/products">
-                            <Button>Continue Shopping</Button>
-                        </Link>
-                    </div>
+                    <EmptyState
+                        icon={ShoppingBag}
+                        title="Your cart is empty"
+                        description="Browse our catalog and add products you love."
+                        action={<Link href="/shop/products"><Button>Continue shopping</Button></Link>}
+                    />
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-4">
@@ -118,7 +124,6 @@ export default function Cart({ cart }) {
                         </div>
                     </div>
                 )}
-            </div>
         </ShopLayout>
     );
 }

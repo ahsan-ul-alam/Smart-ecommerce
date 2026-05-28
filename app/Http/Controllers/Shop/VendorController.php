@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\Vendor;
+use App\Support\MediaUrl;
 use App\Services\Marketing\FlashSaleService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -36,7 +37,10 @@ class VendorController extends Controller
         $this->flashSales->hydrateCache($products->pluck('id')->all());
 
         return Inertia::render('Shop/Vendors/Show', [
-            'vendor' => $vendor->only(['id', 'name', 'slug', 'email', 'phone', 'logo']),
+            'vendor' => [
+                ...$vendor->only(['id', 'name', 'slug', 'email', 'phone']),
+                'logo' => MediaUrl::resolve($vendor->logo),
+            ],
             'products' => ProductResource::collection($products),
             'filters' => $request->only(['search']),
         ]);

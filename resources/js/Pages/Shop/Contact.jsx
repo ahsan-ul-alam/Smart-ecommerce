@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import ShopLayout from '../../Layouts/ShopLayout';
+import ShopPageHeader from '../../Components/Shop/ShopPageHeader';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
 import Textarea from '../../Components/UI/Textarea';
@@ -24,11 +25,13 @@ export default function Contact({ store }) {
     return (
         <ShopLayout>
             <FlashMessage />
-            <div className="max-w-4xl mx-auto px-6 py-10">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Contact Us</h1>
-                <p className="text-slate-500 mb-8">Questions about orders, products, or partnerships? Send us a message.</p>
+            <ShopPageHeader
+                title="Contact us"
+                description="Questions about orders, products, or partnerships? We're here to help."
+                breadcrumbs={[{ label: 'Contact' }]}
+            />
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid md:grid-cols-3 gap-8 max-w-4xl">
                     <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
                         {store.email && (
                             <p className="flex items-center gap-2">
@@ -66,7 +69,6 @@ export default function Contact({ store }) {
                         </CardBody>
                     </Card>
                 </div>
-            </div>
         </ShopLayout>
     );
 }

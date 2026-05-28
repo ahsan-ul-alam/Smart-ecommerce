@@ -1,204 +1,90 @@
-import { Link } from '@inertiajs/react';
 import ShopLayout from '../../Layouts/ShopLayout';
-import ProductCard from '../../Components/Shop/ProductCard';
-import RecentlyViewedGrid from '../../Components/Shop/RecentlyViewedGrid';
+import HomeHeroSlider from '../../Components/Shop/Home/HomeHeroSlider';
+import HomeFlashSale from '../../Components/Shop/Home/HomeFlashSale';
+import HomeCategoryGrid from '../../Components/Shop/Home/HomeCategoryGrid';
+import HomeProductSection from '../../Components/Shop/Home/HomeProductSection';
+import HomeCampaignBanners from '../../Components/Shop/Home/HomeCampaignBanners';
+import HomeBrands from '../../Components/Shop/Home/HomeBrands';
+import HomeReviews from '../../Components/Shop/Home/HomeReviews';
+import HomeTrustSection from '../../Components/Shop/Home/HomeTrustSection';
+import HomeNewsletter from '../../Components/Shop/Home/HomeNewsletter';
 
-const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
-
-const defaultBadges = [
-    ['Cash on Delivery', 'Pay when you receive your order'],
-    ['Free Shipping', 'On orders over ৳2,000'],
-    ['Easy Returns', 'Hassle-free return policy'],
-];
-
-function parseBadges(section) {
-    try {
-        const parsed = JSON.parse(section.content || '[]');
-        if (Array.isArray(parsed) && parsed.length) return parsed;
-    } catch {
-        /* use defaults */
-    }
-    return section.settings?.badges ?? defaultBadges;
-}
-
-function SectionRenderer({ section, featured, flashSale, flashProducts }) {
-    switch (section.type) {
-        case 'hero':
-            return (
-                <section className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary via-teal-800 to-slate-900" />
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_50%)]" />
-                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center text-white">
-                        <p className="text-sm font-semibold uppercase tracking-widest text-teal-200/90 mb-4">Bangladesh Smart Commerce</p>
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 tracking-tight text-balance">{section.title || 'Shop Smart, Pay Easy'}</h1>
-                        <p className="text-teal-50/90 text-lg max-w-xl mx-auto mb-8">{section.subtitle || 'Cash on Delivery across Bangladesh.'}</p>
-                        <Link href={section.link || '/shop/products'} className="inline-flex items-center justify-center bg-white text-primary px-8 py-3.5 rounded-2xl font-bold hover:bg-teal-50 transition-premium shadow-lg">
-                            {section.button_text || 'Browse Products'}
-                        </Link>
-                    </div>
-                </section>
-            );
-        case 'banner':
-            return (
-                <section className="max-w-7xl mx-auto px-6 py-6">
-                    <Link href={section.link || '/shop/products'} className="block rounded-2xl overflow-hidden bg-gradient-to-r from-teal-600 to-teal-800 text-white p-8 md:p-12 hover:opacity-95">
-                        <h2 className="text-2xl md:text-3xl font-bold">{section.title}</h2>
-                        {section.subtitle && <p className="text-teal-100 mt-2">{section.subtitle}</p>}
-                        {section.image && <img src={section.image} alt="" className="mt-4 max-h-32 object-contain" />}
-                    </Link>
-                </section>
-            );
-        case 'trust_badges': {
-            const badges = parseBadges(section);
-            return (
-                <section className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {badges.map(([title, desc]) => (
-                        <div key={title} className="glass-panel p-6 text-center">
-                            <h3 className="font-semibold text-slate-800 dark:text-white">{title}</h3>
-                            <p className="text-sm text-slate-500 mt-1">{desc}</p>
-                        </div>
-                    ))}
-                </section>
-            );
-        }
-        case 'featured_products': {
-            const limit = Math.min(12, Math.max(1, Number(section.settings?.limit) || 4));
-            const products = (featured || []).slice(0, limit);
-            if (!products.length) return null;
-            return (
-                <section className="max-w-7xl mx-auto px-6 py-12">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{section.title || 'Featured Products'}</h2>
-                        {section.link && (
-                            <Link href={section.link} className="text-teal-700 font-medium text-sm hover:underline">
-                                {section.button_text || 'View all →'}
-                            </Link>
-                        )}
-                    </div>
-                    {section.subtitle && <p className="text-slate-500 mb-6 -mt-4">{section.subtitle}</p>}
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {products.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
-                </section>
-            );
-        }
-        case 'html':
-            return (
-                <section className="max-w-7xl mx-auto px-6 py-8">
-                    <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: section.content || '' }} />
-                </section>
-            );
-        default:
-            return null;
-    }
-}
-
-export default function Home({ featured = [], banners = [], flashSale = null, flashProducts = [], sections = [], vendors = [], recentlyViewed = [] }) {
-    const hasHero = sections.some((s) => s.type === 'hero');
-    const hasTrust = sections.some((s) => s.type === 'trust_badges');
-    const hasFeaturedSection = sections.some((s) => s.type === 'featured_products');
-
+export default function Home({
+    heroSlides = [],
+    campaignBanners = [],
+    categories = [],
+    featured = [],
+    flashSale = null,
+    flashProducts = [],
+    trending = [],
+    bestSelling = [],
+    newArrivals = [],
+    recentlyViewed = [],
+    brands = [],
+    reviews = [],
+    wishlistProductIds = [],
+}) {
     return (
-        <ShopLayout>
-            {banners.length > 0 && (
-                <section className="max-w-7xl mx-auto px-6 pt-6">
-                    <div className="grid gap-4">
-                        {banners.map((banner) => (
-                            <Link key={banner.id} href={banner.link || '/shop/products'} className="block rounded-2xl overflow-hidden bg-gradient-to-r from-teal-600 to-teal-800 text-white p-8 md:p-12 hover:opacity-95">
-                                <h2 className="text-2xl md:text-3xl font-bold">{banner.title}</h2>
-                                {banner.image && <img src={banner.image} alt={banner.title} className="mt-4 max-h-32 object-contain" />}
-                            </Link>
-                        ))}
-                    </div>
-                </section>
+        <ShopLayout fullWidth>
+            <HomeHeroSlider slides={heroSlides} />
+
+            <HomeFlashSale
+                flashSale={flashSale}
+                products={flashProducts}
+                wishlistProductIds={wishlistProductIds}
+            />
+
+            <HomeCategoryGrid categories={categories} />
+
+            <HomeProductSection
+                title="Featured products"
+                subtitle="Hand-picked deals for you"
+                viewAllHref="/shop/products?featured=1"
+                products={featured}
+                wishlistProductIds={wishlistProductIds}
+            />
+
+            <HomeCampaignBanners banners={campaignBanners} />
+
+            <HomeProductSection
+                title="Trending now"
+                subtitle="Popular picks this week"
+                products={trending}
+                wishlistProductIds={wishlistProductIds}
+            />
+
+            <HomeProductSection
+                title="Best selling"
+                subtitle="Top orders from our customers"
+                products={bestSelling}
+                wishlistProductIds={wishlistProductIds}
+            />
+
+            <HomeProductSection
+                title="New arrivals"
+                subtitle="Fresh products just landed"
+                viewAllHref="/shop/products"
+                products={newArrivals}
+                wishlistProductIds={wishlistProductIds}
+            />
+
+            {recentlyViewed.length > 0 && (
+                <HomeProductSection
+                    title="Recently viewed"
+                    subtitle="Continue where you left off"
+                    viewAllHref="/shop/products"
+                    products={recentlyViewed}
+                    wishlistProductIds={wishlistProductIds}
+                />
             )}
 
-            {sections.map((section) => (
-                <SectionRenderer key={section.id} section={section} featured={featured} />
-            ))}
+            <HomeBrands brands={brands} />
 
-            {!hasHero && (
-                <section className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary via-teal-800 to-slate-900" />
-                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center text-white">
-                        <h1 className="text-4xl sm:text-5xl font-bold mb-4 tracking-tight">Shop Smart, Pay Easy</h1>
-                        <p className="text-teal-50/90 text-lg max-w-xl mx-auto mb-8">Cash on Delivery across Bangladesh. Fast delivery, trusted products.</p>
-                        <Link href="/shop/products" className="inline-flex bg-white text-primary px-8 py-3.5 rounded-2xl font-bold hover:bg-teal-50 transition-premium shadow-lg">Browse Products</Link>
-                    </div>
-                </section>
-            )}
+            <HomeReviews reviews={reviews} />
 
-            {flashSale && flashProducts.length > 0 && (
-                <section className="max-w-7xl mx-auto px-6 py-12">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                                <span className="text-amber-500">⚡</span> {flashSale.title}
-                            </h2>
-                            <p className="text-sm text-slate-500 mt-1">Limited time — ends {new Date(flashSale.ends_at).toLocaleDateString()}</p>
-                        </div>
-                        <Link href={`/shop/flash-sales/${flashSale.slug}`} className="text-teal-700 font-medium text-sm hover:underline">Shop flash sale →</Link>
-                    </div>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {flashProducts.map((product) => (
-                            <ProductCard key={product.id} product={product} className="ring-2 ring-amber-400/30" />
-                        ))}
-                    </div>
-                </section>
-            )}
+            <HomeTrustSection />
 
-            {vendors.length > 0 && (
-                <section className="max-w-7xl mx-auto px-6 py-12">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Shop by Vendor</h2>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {vendors.map((vendor) => (
-                            <Link
-                                key={vendor.id}
-                                href={`/shop/vendors/${vendor.slug}`}
-                                className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:border-teal-500 hover:shadow-md transition-all text-center"
-                            >
-                                {vendor.logo ? (
-                                    <img src={vendor.logo} alt={vendor.name} className="w-14 h-14 mx-auto rounded-lg object-cover mb-2" />
-                                ) : (
-                                    <div className="w-14 h-14 mx-auto rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold mb-2">
-                                        {vendor.name.charAt(0)}
-                                    </div>
-                                )}
-                                <p className="font-medium text-slate-800 dark:text-white">{vendor.name}</p>
-                                <p className="text-xs text-slate-400 mt-0.5">{vendor.products_count} products</p>
-                            </Link>
-                        ))}
-                    </div>
-                </section>
-            )}
-
-            {featured.length > 0 && !hasFeaturedSection && (
-                <section className="max-w-7xl mx-auto px-6 py-12">
-                    <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Featured Products</h2>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {featured.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
-                </section>
-            )}
-
-            <RecentlyViewedGrid products={recentlyViewed} />
-
-            {!hasTrust && (
-                <section className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {defaultBadges.map(([title, desc]) => (
-                        <div key={title} className="bg-white dark:bg-slate-800 rounded-xl p-6 border text-center">
-                            <h3 className="font-semibold text-slate-800 dark:text-white">{title}</h3>
-                            <p className="text-sm text-slate-500 mt-1">{desc}</p>
-                        </div>
-                    ))}
-                </section>
-            )}
+            <HomeNewsletter />
         </ShopLayout>
     );
 }

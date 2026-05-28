@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class FlashSale extends Model
 {
     protected $fillable = [
-        'title', 'slug', 'description', 'starts_at', 'ends_at', 'is_active',
+        'title', 'slug', 'description', 'image', 'starts_at', 'ends_at', 'is_active',
     ];
 
     protected function casts(): array

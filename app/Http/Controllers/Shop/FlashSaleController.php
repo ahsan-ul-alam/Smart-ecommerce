@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\FlashSale;
 use App\Services\Marketing\FlashSaleService;
+use App\Support\MediaUrl;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,6 +29,7 @@ class FlashSaleController extends Controller
                 'title' => $sale->title,
                 'slug' => $sale->slug,
                 'description' => $sale->description,
+                'image' => MediaUrl::resolve($sale->image),
                 'ends_at' => $sale->ends_at->toISOString(),
                 'products' => ProductResource::collection($sale->products)->resolve(),
             ]),
@@ -47,6 +49,7 @@ class FlashSaleController extends Controller
                 'title' => $sale->title,
                 'slug' => $sale->slug,
                 'description' => $sale->description,
+                'image' => MediaUrl::resolve($sale->image),
                 'ends_at' => $sale->ends_at->toISOString(),
             ],
             'products' => ProductResource::collection($sale->products)->resolve(),

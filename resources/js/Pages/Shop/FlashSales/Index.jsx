@@ -1,12 +1,13 @@
 import { Link } from '@inertiajs/react';
 import ShopLayout from '../../../Layouts/ShopLayout';
+import ShopBannerFrame from '../../../Components/Shop/ShopBannerFrame';
 import ProductThumbnail from '../../../Components/Catalog/ProductThumbnail';
 import ProductPrice from '../../../Components/Catalog/ProductPrice';
 
 export default function FlashSalesIndex({ sales }) {
     return (
         <ShopLayout>
-            <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="shop-container py-8">
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Flash Sales</h1>
                 <p className="text-slate-500 mb-8">Limited-time deals — grab them before they end.</p>
 
@@ -15,6 +16,11 @@ export default function FlashSalesIndex({ sales }) {
                 ) : (
                     sales.map((sale) => (
                         <section key={sale.id} className="mb-12">
+                            {sale.image && (
+                                <Link href={`/shop/flash-sales/${sale.slug}`} className="block mb-4 rounded-2xl overflow-hidden">
+                                    <ShopBannerFrame src={sale.image} alt={sale.title} variant="flash" />
+                                </Link>
+                            )}
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">{sale.title}</h2>

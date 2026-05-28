@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\FlashSale;
 use App\Models\Product;
 use App\Services\Marketing\FlashSaleService;
+use App\Support\MediaUrl;
+use App\Support\PromotionalImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -21,6 +23,7 @@ class FlashSaleController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/FlashSales/Index', [
+            'bannerSizeHint' => PromotionalImage::RECOMMENDED_LABEL,
             'flashSales' => FlashSale::query()
                 ->with(['products:id,name,price,sku'])
                 ->withCount('products')
@@ -31,6 +34,7 @@ class FlashSaleController extends Controller
                     'title' => $s->title,
                     'slug' => $s->slug,
                     'description' => $s->description,
+                    'image_url' => MediaUrl::resolve($s->image),
                     'starts_at' => $s->starts_at->format('Y-m-d\TH:i'),
                     'ends_at' => $s->ends_at->format('Y-m-d\TH:i'),
                     'is_active' => $s->is_active,
@@ -51,11 +55,19 @@ class FlashSaleController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $this->validateSale($request);
+        $data = $this->validateSale($request, requireImage: true);
+        $path = PromotionalImage::store($request->file('image'), 'flash-sales');
+
         $sale = FlashSale::query()->create([
-            ...$data,
+            'title' => $data['title'],
             'slug' => $this->flashSales->uniqueSlug($data['slug'] ?? $data['title']),
+            'description' => $data['description'] ?? null,
+            'image' => $path,
+            'starts_at' => $data['starts_at'],
+            'ends_at' => $data['ends_at'],
+            'is_active' => $request->boolean('is_active', true),
         ]);
+
         $this->flashSales->syncProducts($sale, $data['products'] ?? []);
 
         return back()->with('success', 'Flash sale created.');
@@ -64,10 +76,28 @@ class FlashSaleController extends Controller
     public function update(Request $request, FlashSale $flashSale): RedirectResponse
     {
         $data = $this->validateSale($request, $flashSale);
+        $imagePath = $flashSale->image;
+
+        if ($request->boolean('remove_image')) {
+            PromotionalImage::delete($imagePath);
+            $imagePath = null;
+        }
+
+        if ($request->hasFile('image')) {
+            PromotionalImage::delete($imagePath);
+            $imagePath = PromotionalImage::store($request->file('image'), 'flash-sales');
+        }
+
         $flashSale->update([
-            ...$data,
+            'title' => $data['title'],
             'slug' => $this->flashSales->uniqueSlug($data['slug'] ?? $data['title'], $flashSale->id),
+            'description' => $data['description'] ?? null,
+            'image' => $imagePath,
+            'starts_at' => $data['starts_at'],
+            'ends_at' => $data['ends_at'],
+            'is_active' => $request->boolean('is_active', true),
         ]);
+
         $this->flashSales->syncProducts($flashSale, $data['products'] ?? []);
 
         return back()->with('success', 'Flash sale updated.');
@@ -75,20 +105,27 @@ class FlashSaleController extends Controller
 
     public function destroy(FlashSale $flashSale): RedirectResponse
     {
+        PromotionalImage::delete($flashSale->image);
         $flashSale->delete();
 
         return back()->with('success', 'Flash sale deleted.');
     }
 
-    protected function validateSale(Request $request, ?FlashSale $flashSale = null): array
+    protected function validateSale(Request $request, ?FlashSale $flashSale = null, bool $requireImage = false): array
     {
+        $imageRules = $requireImage
+            ? ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120']
+            : ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'];
+
         return $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('flash_sales', 'slug')->ignore($flashSale)],
             'description' => ['nullable', 'string'],
+            'image' => $imageRules,
+            'remove_image' => ['nullable', 'boolean'],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
-            'is_active' => ['boolean'],
+            'is_active' => ['nullable', 'boolean'],
             'products' => ['nullable', 'array'],
             'products.*.product_id' => ['required', 'exists:products,id'],
             'products.*.sale_price' => ['required', 'numeric', 'min:0'],

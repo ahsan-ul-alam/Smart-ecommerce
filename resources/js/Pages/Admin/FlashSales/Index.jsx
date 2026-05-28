@@ -1,5 +1,5 @@
 import { useForm, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, Zap } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
@@ -8,15 +8,24 @@ import Textarea from '../../../Components/UI/Textarea';
 import Badge from '../../../Components/UI/Badge';
 import FlashMessage from '../../../Components/UI/FlashMessage';
 import { Card, CardBody, CardHeader } from '../../../Components/UI/Card';
+import BannerImageField from '../../../Components/Admin/BannerImageField';
 
 const empty = {
     title: '', slug: '', description: '',
     starts_at: '', ends_at: '', is_active: true, products: [],
+    image: null, remove_image: false,
 };
 
-export default function FlashSalesIndex({ flashSales, catalogProducts }) {
+export default function FlashSalesIndex({ flashSales, catalogProducts, bannerSizeHint }) {
     const [editing, setEditing] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const imageRef = useRef(null);
     const form = useForm(empty);
+
+    const resetImage = () => {
+        setImagePreview(null);
+        if (imageRef.current) imageRef.current.value = '';
+    };
 
     const openCreate = () => {
         setEditing('new');
@@ -28,6 +37,7 @@ export default function FlashSalesIndex({ flashSales, catalogProducts }) {
             starts_at: start.toISOString().slice(0, 16),
             ends_at: end.toISOString().slice(0, 16),
         });
+        resetImage();
     };
 
     const openEdit = (sale) => {
@@ -39,12 +49,29 @@ export default function FlashSalesIndex({ flashSales, catalogProducts }) {
             starts_at: sale.starts_at,
             ends_at: sale.ends_at,
             is_active: sale.is_active,
+            image: null,
+            remove_image: false,
             products: sale.products.map((p) => ({
                 product_id: p.product_id,
                 sale_price: String(p.sale_price),
                 max_quantity: p.max_quantity ? String(p.max_quantity) : '',
             })),
         });
+        setImagePreview(sale.image_url || null);
+        if (imageRef.current) imageRef.current.value = '';
+    };
+
+    const onImageChange = (e) => {
+        const file = e.target.files?.[0];
+        form.setData('image', file ?? null);
+        form.setData('remove_image', false);
+        if (file) setImagePreview(URL.createObjectURL(file));
+    };
+
+    const removeImage = () => {
+        form.setData('image', null);
+        form.setData('remove_image', true);
+        resetImage();
     };
 
     const addProduct = () => {
@@ -68,9 +95,30 @@ export default function FlashSalesIndex({ flashSales, catalogProducts }) {
 
     const submit = (e) => {
         e.preventDefault();
-        if (editing === 'new') form.post('/admin/flash-sales', { onSuccess: () => setEditing(null) });
-        else form.put(`/admin/flash-sales/${editing}`, { onSuccess: () => setEditing(null) });
+        const onSuccess = () => {
+            setEditing(null);
+            resetImage();
+            form.setData('image', null);
+            form.setData('remove_image', false);
+        };
+        const options = { preserveScroll: true, onSuccess };
+        const needsFormData = editing === 'new' || form.data.image || form.data.remove_image;
+
+        if (needsFormData) {
+            if (editing !== 'new') {
+                form.transform((data) => ({ ...data, _method: 'put' }));
+            }
+            const url = editing === 'new' ? '/admin/flash-sales' : `/admin/flash-sales/${editing}`;
+            form.post(url, { ...options, forceFormData: true });
+            return;
+        }
+
+        form.put(`/admin/flash-sales/${editing}`, options);
     };
+
+    useEffect(() => () => {
+        if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
+    }, [imagePreview]);
 
     const destroy = (id) => { if (confirm('Delete flash sale?')) router.delete(`/admin/flash-sales/${id}`); };
 
@@ -93,6 +141,22 @@ export default function FlashSalesIndex({ flashSales, catalogProducts }) {
                                 <Input label="Ends" type="datetime-local" value={form.data.ends_at} onChange={(e) => form.setData('ends_at', e.target.value)} required />
                             </div>
                             <Textarea label="Description" value={form.data.description} onChange={(e) => form.setData('description', e.target.value)} rows={2} />
+
+                            <BannerImageField
+                                label="Flash sale banner"
+                                previewVariant="flash"
+                                required={editing === 'new'}
+                                preview={imagePreview}
+                                inputRef={imageRef}
+                                onChange={onImageChange}
+                                onRemove={removeImage}
+                                error={form.errors.image}
+                                showRemove={editing !== 'new'}
+                            />
+                            {bannerSizeHint && (
+                                <p className="text-xs text-slate-500 -mt-2">Used on homepage flash section and flash sale pages.</p>
+                            )}
+
                             <label className="flex items-center gap-2 text-sm">
                                 <input type="checkbox" checked={form.data.is_active} onChange={(e) => form.setData('is_active', e.target.checked)} className="rounded" />
                                 Active
@@ -142,6 +206,7 @@ export default function FlashSalesIndex({ flashSales, catalogProducts }) {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b text-left text-slate-500">
+                                <th className="px-6 py-3">Banner</th>
                                 <th className="px-6 py-3">Sale</th>
                                 <th className="px-6 py-3">Period</th>
                                 <th className="px-6 py-3">Products</th>
@@ -152,6 +217,13 @@ export default function FlashSalesIndex({ flashSales, catalogProducts }) {
                         <tbody className="divide-y">
                             {flashSales.map((sale) => (
                                 <tr key={sale.id}>
+                                    <td className="px-6 py-3">
+                                        {sale.image_url ? (
+                                            <img src={sale.image_url} alt="" className="h-10 w-24 rounded object-cover border border-slate-200" />
+                                        ) : (
+                                            <span className="text-xs text-slate-400">—</span>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-3">
                                         <div className="flex items-center gap-2 font-medium">
                                             <Zap size={14} className="text-amber-500" />

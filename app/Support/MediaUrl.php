@@ -2,8 +2,6 @@
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\Storage;
-
 class MediaUrl
 {
     public static function resolve(?string $path): ?string
@@ -12,10 +10,23 @@ class MediaUrl
             return null;
         }
 
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        $path = trim($path);
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '//')) {
             return $path;
         }
 
-        return Storage::disk('public')->url($path);
+        if (str_starts_with($path, '/')) {
+            return $path;
+        }
+
+        $normalized = str_replace('\\', '/', $path);
+        $normalized = ltrim($normalized, '/');
+
+        if (str_starts_with($normalized, 'storage/')) {
+            return '/'.$normalized;
+        }
+
+        return '/storage/'.$normalized;
     }
 }
