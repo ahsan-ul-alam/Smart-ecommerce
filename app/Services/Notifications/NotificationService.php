@@ -26,7 +26,7 @@ class NotificationService
         $phone = $order->guest_phone ?? $order->shipping_address['phone'] ?? null;
         $email = $order->guest_email ?? $order->user?->email;
 
-        if ($this->settings->get('notifications', 'email_order_confirmation', true) && $email) {
+        if ($this->settings->getBoolean('notifications', 'email_order_confirmation', true) && $email) {
             $this->sendEmail(
                 $email,
                 'Order '.$order->order_number.' confirmed',
@@ -36,7 +36,7 @@ class NotificationService
             );
         }
 
-        if ($this->settings->get('notifications', 'sms_order_confirmation', true) && $phone) {
+        if ($this->settings->getBoolean('notifications', 'sms_order_confirmation', true) && $phone) {
             $this->sendSms($phone, "Order {$order->order_number} placed. Total: {$order->total} BDT. Thank you!", $order, 'order_placed');
         }
     }
@@ -64,24 +64,36 @@ class NotificationService
         $this->sendEmail($email, 'Low stock alert — '.config('arcommerze.name'), $html, null, 'low_stock');
     }
 
-    public function abandonedCartReminder(string $phone, ?string $email, string $cartUrl): void
+    public function abandonedCartReminder(string $phone, ?string $email, string $cartUrl, ?string $couponCode = null): void
     {
         if (! $this->modules->isEnabled('abandoned_cart')) {
             return;
         }
 
+        if ($couponCode && $this->modules->isEnabled('coupon')) {
+            $cartUrl .= (str_contains($cartUrl, '?') ? '&' : '?').'coupon='.urlencode($couponCode);
+        }
+
+        $couponLine = $couponCode
+            ? "<p>Use code <strong>{$couponCode}</strong> at checkout.</p>"
+            : '';
+
         if ($this->settings->get('notifications', 'abandoned_cart_email', true) && $email) {
             $this->sendEmail(
                 $email,
                 'Complete your order',
-                "<p>You left items in your cart. <a href=\"{$cartUrl}\">Complete checkout</a></p>",
+                "<p>You left items in your cart. <a href=\"{$cartUrl}\">Complete checkout</a></p>{$couponLine}",
                 null,
                 'abandoned_cart'
             );
         }
 
-        if ($this->settings->get('notifications', 'abandoned_cart_sms', false) && $phone) {
-            $this->sendSms($phone, "Complete your ArCommerze order: {$cartUrl}", null, 'abandoned_cart');
+        if ($this->settings->getBoolean('notifications', 'abandoned_cart_sms', false) && $phone) {
+            $sms = "Complete your ArCommerze order: {$cartUrl}";
+            if ($couponCode) {
+                $sms .= " Code: {$couponCode}";
+            }
+            $this->sendSms($phone, $sms, null, 'abandoned_cart');
         }
     }
 

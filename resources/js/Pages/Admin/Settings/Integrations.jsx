@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Settings } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
@@ -146,6 +146,12 @@ export default function Integrations({ type, integrations }) {
                                     <Badge variant={integration.is_enabled ? 'success' : 'default'}>
                                         {integration.is_enabled ? 'Enabled' : 'Disabled'}
                                     </Badge>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => router.post(`/admin/integrations/${integration.id}/test`, {}, { preserveScroll: true })}
+                                    >
+                                        Test
+                                    </Button>
                                     <Button variant="secondary" onClick={() => openEdit(integration)}>Configure</Button>
                                 </div>
                             </div>

@@ -12,6 +12,9 @@ class OrderReturnRequest extends Model
         'order_id',
         'user_id',
         'status',
+        'return_type',
+        'partial_amount',
+        'exchange_product_id',
         'reason',
         'customer_note',
         'admin_note',
@@ -23,8 +26,14 @@ class OrderReturnRequest extends Model
     {
         return [
             'status' => ReturnRequestStatus::class,
+            'partial_amount' => 'decimal:2',
             'reviewed_at' => 'datetime',
         ];
+    }
+
+    public function exchangeProduct(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'exchange_product_id');
     }
 
     public function order(): BelongsTo

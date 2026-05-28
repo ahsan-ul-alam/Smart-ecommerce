@@ -27,6 +27,8 @@ return [
         'abandoned_cart' => ['label' => 'Abandoned Cart', 'group' => 'marketing'],
         'pos' => ['label' => 'POS', 'group' => 'commerce'],
         'vendor' => ['label' => 'Multi Vendor', 'group' => 'commerce'],
+        'special_product' => ['label' => 'Special Product Landing', 'group' => 'marketing'],
+        'marketing_campaign' => ['label' => 'Campaigns & Popups', 'group' => 'marketing'],
     ],
 
     'payment_gateways' => [

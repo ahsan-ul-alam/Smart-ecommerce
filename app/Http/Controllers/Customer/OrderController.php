@@ -37,7 +37,7 @@ class OrderController extends Controller
     {
         abort_unless($order->user_id === $request->user()->id, 403);
 
-        $order->load(['items', 'statusHistories', 'returnRequest']);
+        $order->load(['items', 'statusHistories', 'returnRequest', 'shipment']);
 
         return Inertia::render('Customer/Orders/Show', [
             'order' => (new OrderResource($order))->resolve(),

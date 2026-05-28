@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
 import Input from '../../../Components/UI/Input';
+import Textarea from '../../../Components/UI/Textarea';
 import FlashMessage from '../../../Components/UI/FlashMessage';
 import { Card, CardBody, CardHeader } from '../../../Components/UI/Card';
 
@@ -19,7 +20,7 @@ export default function Site({ settings, logo_url, favicon_url }) {
         setFaviconPreview(favicon_url);
     }, [logo_url, favicon_url]);
 
-    const { data, setData, post, processing, errors, transform } = useForm({
+    const { data, setData, post, put, processing, errors, transform } = useForm({
         settings: {
             site_name: settings.site_name ?? '',
             site_tagline: settings.site_tagline ?? '',
@@ -30,6 +31,7 @@ export default function Site({ settings, logo_url, favicon_url }) {
             currency_symbol: settings.currency_symbol ?? '৳',
             timezone: settings.timezone ?? 'Asia/Dhaka',
             maintenance_mode: settings.maintenance_mode ?? false,
+            maintenance_message: settings.maintenance_message ?? '',
             primary_color: settings.primary_color ?? '#0f766e',
             secondary_color: settings.secondary_color ?? '#f59e0b',
             dark_mode_default: settings.dark_mode_default ?? false,
@@ -40,10 +42,18 @@ export default function Site({ settings, logo_url, favicon_url }) {
         remove_favicon: false,
     });
 
-    transform((formData) => ({
-        ...formData,
-        _method: 'put',
-    }));
+    const hasFiles = () => Boolean(data.logo || data.favicon);
+
+    transform((formData) => {
+        const payload = { ...formData, _method: 'put' };
+
+        if (hasFiles()) {
+            payload['settings[maintenance_mode]'] = formData.settings.maintenance_mode ? '1' : '0';
+            payload['settings[dark_mode_default]'] = formData.settings.dark_mode_default ? '1' : '0';
+        }
+
+        return payload;
+    });
 
     const onLogoChange = (e) => {
         const file = e.target.files?.[0];
@@ -77,18 +87,22 @@ export default function Site({ settings, logo_url, favicon_url }) {
         if (faviconRef.current) faviconRef.current.value = '';
     };
 
+    const onSaveSuccess = () => {
+        setData('logo', null);
+        setData('favicon', null);
+        setData('remove_logo', false);
+        setData('remove_favicon', false);
+    };
+
     const submit = (e) => {
         e.preventDefault();
-        post('/admin/settings/general', {
-            forceFormData: true,
-            preserveScroll: true,
-            onSuccess: () => {
-                setData('logo', null);
-                setData('favicon', null);
-                setData('remove_logo', false);
-                setData('remove_favicon', false);
-            },
-        });
+        const options = { preserveScroll: true, onSuccess: onSaveSuccess };
+
+        if (hasFiles()) {
+            post('/admin/settings/general', { ...options, forceFormData: true });
+        } else {
+            put('/admin/settings/general', options);
+        }
     };
 
     return (
@@ -144,15 +158,29 @@ export default function Site({ settings, logo_url, favicon_url }) {
                             value={data.settings.timezone}
                             onChange={(e) => setData('settings', { ...data.settings, timezone: e.target.value })}
                         />
-                        <label className="flex items-center gap-2 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={data.settings.maintenance_mode}
-                                onChange={(e) => setData('settings', { ...data.settings, maintenance_mode: e.target.checked })}
-                                className="rounded"
-                            />
-                            Maintenance mode
-                        </label>
+                        <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-700">
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={data.settings.maintenance_mode}
+                                    onChange={(e) => setData('settings', { ...data.settings, maintenance_mode: e.target.checked })}
+                                    className="rounded"
+                                />
+                                Maintenance mode
+                            </label>
+                            <p className="text-xs text-slate-500">
+                                When enabled, the storefront shows a maintenance page. Admin and login stay available.
+                            </p>
+                            {data.settings.maintenance_mode && (
+                                <Textarea
+                                    label="Maintenance message"
+                                    value={data.settings.maintenance_message}
+                                    onChange={(e) => setData('settings', { ...data.settings, maintenance_message: e.target.value })}
+                                    rows={3}
+                                    placeholder="We are performing scheduled maintenance. Please check back soon."
+                                />
+                            )}
+                        </div>
                     </CardBody>
                 </Card>
 

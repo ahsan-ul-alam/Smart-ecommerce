@@ -264,11 +264,37 @@ class OrderService
         return $number;
     }
 
+    public function recordPartialRefund(Order $order, float $amount, ?string $note, int $userId): Order
+    {
+        $amount = round(min($amount, (float) $order->total - (float) $order->refunded_amount), 2);
+        if ($amount <= 0) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'amount' => 'Refund amount must be greater than zero and not exceed remaining balance.',
+            ]);
+        }
+
+        $newRefunded = (float) $order->refunded_amount + $amount;
+        $order->update(['refunded_amount' => $newRefunded]);
+
+        if ($newRefunded >= (float) $order->total) {
+            $this->updatePaymentStatus($order, PaymentStatus::Refunded);
+            $this->updateStatus($order, OrderStatus::Refunded, $note ?? 'Full refund processed', $userId);
+        } else {
+            $this->recordStatus($order, $order->status, $note ?? "Partial refund ৳{$amount}", $userId);
+        }
+
+        return $order->fresh();
+    }
+
     public function getStats(): array
     {
+        $validToday = Order::query()
+            ->whereDate('created_at', today())
+            ->whereNotIn('status', [OrderStatus::Cancelled, OrderStatus::Refunded]);
+
         return [
-            'orders_today' => Order::query()->whereDate('created_at', today())->count(),
-            'revenue_today' => (float) Order::query()->whereDate('created_at', today())->sum('total'),
+            'orders_today' => (clone $validToday)->count(),
+            'revenue_today' => (float) (clone $validToday)->sum('total'),
             'pending_orders' => Order::query()->where('status', OrderStatus::Pending)->count(),
             'total_orders' => Order::query()->count(),
             'revenue_month' => (float) Order::query()

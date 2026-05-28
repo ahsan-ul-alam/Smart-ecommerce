@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
         app(IntegrationManager::class)->syncFromConfig();
 
         // Enable core modules by default
-        foreach (['analytics', 'coupon', 'flash_sale', 'loyalty', 'wallet', 'referral', 'affiliate', 'reviews', 'abandoned_cart', 'blog'] as $module) {
+        foreach (['analytics', 'coupon', 'flash_sale', 'loyalty', 'wallet', 'referral', 'affiliate', 'reviews', 'abandoned_cart', 'blog', 'special_product', 'marketing_campaign'] as $module) {
             try {
                 app(ModuleService::class)->toggle($module, true);
             } catch (\Throwable) {

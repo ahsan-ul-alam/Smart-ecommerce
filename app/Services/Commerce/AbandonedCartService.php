@@ -6,6 +6,7 @@ use App\Models\AbandonedCartReminder;
 use App\Models\Cart;
 use App\Services\Modules\ModuleService;
 use App\Services\Notifications\NotificationService;
+use App\Services\Settings\SettingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class AbandonedCartService
@@ -14,11 +15,44 @@ class AbandonedCartService
         protected ModuleService $modules,
         protected NotificationService $notifications,
         protected CartService $cartService,
+        protected SettingService $settings,
     ) {}
 
     public function isEnabled(): bool
     {
         return $this->modules->isEnabled('abandoned_cart');
+    }
+
+    public function stats(int $idleHours = 2): array
+    {
+        $threshold = now()->subHours($idleHours);
+
+        $abandonedQuery = Cart::query()
+            ->whereHas('items')
+            ->where('updated_at', '<', $threshold);
+
+        $abandonedCount = (clone $abandonedQuery)->count();
+        $remindersSent30d = AbandonedCartReminder::query()
+            ->where('sent_at', '>=', now()->subDays(30))
+            ->count();
+        $cartsReminded = AbandonedCartReminder::query()
+            ->where('sent_at', '>=', now()->subDays(30))
+            ->distinct('cart_id')
+            ->count('cart_id');
+
+        $potentialRevenue = 0.0;
+        foreach ((clone $abandonedQuery)->with('items')->limit(50)->get() as $cart) {
+            $totals = $this->cartService->calculateTotals($cart);
+            $potentialRevenue += (float) ($totals['total'] ?? 0);
+        }
+
+        return [
+            'abandoned_carts' => $abandonedCount,
+            'reminders_sent_30d' => $remindersSent30d,
+            'carts_reminded_30d' => $cartsReminded,
+            'potential_revenue' => round($potentialRevenue, 2),
+            'recovery_coupon_default' => (string) $this->settings->get('notifications', 'abandoned_cart_recovery_coupon', ''),
+        ];
     }
 
     public function list(int $idleHours = 2, int $perPage = 20): LengthAwarePaginator
@@ -39,7 +73,7 @@ class AbandonedCartService
             ->through(fn (Cart $cart) => $this->formatCart($cart));
     }
 
-    public function sendReminder(Cart $cart): void
+    public function sendReminder(Cart $cart, ?string $couponCode = null): void
     {
         if (! $this->isEnabled()) {
             return;
@@ -54,8 +88,10 @@ class AbandonedCartService
         $phone = $cart->user?->phone;
         $email = $cart->user?->email;
         $url = url('/shop/cart');
+        $coupon = $couponCode ?: (string) $this->settings->get('notifications', 'abandoned_cart_recovery_coupon', '');
+        $coupon = $coupon !== '' ? $coupon : null;
 
-        $this->notifications->abandonedCartReminder($phone, $email, $url);
+        $this->notifications->abandonedCartReminder($phone, $email, $url, $coupon);
 
         AbandonedCartReminder::query()->create([
             'cart_id' => $cart->id,

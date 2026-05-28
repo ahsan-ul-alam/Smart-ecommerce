@@ -24,6 +24,15 @@ class CartController extends Controller
         ]);
     }
 
+    public function drawer(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $cart = $this->cartService->resolve($request);
+
+        return response()->json([
+            'cart' => $this->cartService->formatForFrontend($cart->load(['items.product', 'coupon'])),
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $request->validate([

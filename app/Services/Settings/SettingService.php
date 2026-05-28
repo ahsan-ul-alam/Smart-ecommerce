@@ -26,6 +26,16 @@ class SettingService
         return $this->settings->get($group, $key, $default);
     }
 
+    public function getBoolean(string $group, string $key, bool $default = false): bool
+    {
+        return filter_var($this->get($group, $key, $default), FILTER_VALIDATE_BOOLEAN);
+    }
+
+    public function isMaintenanceMode(): bool
+    {
+        return $this->getBoolean('general', 'maintenance_mode', false);
+    }
+
     public function getGroup(string $group): array
     {
         return $this->settings->getByGroup($group)
@@ -58,12 +68,12 @@ class SettingService
             'currency' => $this->get('general', 'currency', 'BDT'),
             'currency_symbol' => $this->get('general', 'currency_symbol', '৳'),
             'timezone' => $this->get('general', 'timezone', 'Asia/Dhaka'),
-            'maintenance_mode' => (bool) $this->get('general', 'maintenance_mode', false),
+            'maintenance_mode' => $this->isMaintenanceMode(),
             'primary_color' => $this->get('theme', 'primary_color', '#0f766e'),
             'secondary_color' => $this->get('theme', 'secondary_color', '#f59e0b'),
             'logo' => MediaUrl::resolve($this->get('theme', 'logo')),
             'favicon' => MediaUrl::resolve($this->get('theme', 'favicon')),
-            'dark_mode_default' => (bool) $this->get('theme', 'dark_mode_default', false),
+            'dark_mode_default' => $this->getBoolean('theme', 'dark_mode_default', false),
         ];
     }
 

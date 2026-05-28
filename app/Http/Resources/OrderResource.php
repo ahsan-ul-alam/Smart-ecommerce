@@ -31,6 +31,8 @@ class OrderResource extends JsonResource
             'shipping_amount' => (float) $this->shipping_amount,
             'tax_amount' => (float) $this->tax_amount,
             'total' => (float) $this->total,
+            'refunded_amount' => (float) ($this->refunded_amount ?? 0),
+            'refundable_remaining' => max(0, (float) $this->total - (float) ($this->refunded_amount ?? 0)),
             'coupon_code' => $this->coupon_code,
             'shipping_address' => $this->shipping_address,
             'customer_note' => $this->customer_note,

@@ -43,6 +43,7 @@ class SettingsController extends Controller
                 'currency_symbol' => $branding['currency_symbol'],
                 'timezone' => $branding['timezone'],
                 'maintenance_mode' => $branding['maintenance_mode'],
+                'maintenance_message' => (string) $this->settings->get('general', 'maintenance_message', ''),
                 'primary_color' => $branding['primary_color'],
                 'secondary_color' => $branding['secondary_color'],
                 'dark_mode_default' => $branding['dark_mode_default'],
@@ -59,20 +60,25 @@ class SettingsController extends Controller
 
     public function updateSite(Request $request): RedirectResponse
     {
+        $request->merge([
+            'settings' => $this->normalizeSettingsInput($request->input('settings', [])),
+        ]);
+
         $data = $request->validate([
             'settings' => ['required', 'array'],
             'settings.site_name' => ['required', 'string', 'max:255'],
             'settings.site_tagline' => ['nullable', 'string', 'max:500'],
             'settings.store_phone' => ['nullable', 'string', 'max:30'],
-            'settings.store_email' => ['nullable', 'email', 'max:255'],
+            'settings.store_email' => ['nullable', 'string', 'email', 'max:255'],
             'settings.store_address' => ['nullable', 'string', 'max:500'],
             'settings.currency' => ['nullable', 'string', 'max:10'],
             'settings.currency_symbol' => ['nullable', 'string', 'max:5'],
             'settings.timezone' => ['nullable', 'string', 'max:64'],
-            'settings.maintenance_mode' => ['nullable', 'boolean'],
+            'settings.maintenance_mode' => ['nullable'],
+            'settings.maintenance_message' => ['nullable', 'string', 'max:1000'],
             'settings.primary_color' => ['nullable', 'string', 'max:20'],
             'settings.secondary_color' => ['nullable', 'string', 'max:20'],
-            'settings.dark_mode_default' => ['nullable', 'boolean'],
+            'settings.dark_mode_default' => ['nullable'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,svg', 'max:2048'],
             'favicon' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,ico', 'max:1024'],
             'remove_logo' => ['nullable', 'boolean'],
@@ -89,11 +95,12 @@ class SettingsController extends Controller
         $this->settings->set('general', 'currency', $settings['currency'] ?? 'BDT');
         $this->settings->set('general', 'currency_symbol', $settings['currency_symbol'] ?? '৳');
         $this->settings->set('general', 'timezone', $settings['timezone'] ?? 'Asia/Dhaka');
-        $this->settings->set('general', 'maintenance_mode', $request->boolean('settings.maintenance_mode'), 'boolean');
+        $this->settings->set('general', 'maintenance_mode', $this->settingsBoolean($request, 'maintenance_mode'), 'boolean');
+        $this->settings->set('general', 'maintenance_message', $settings['maintenance_message'] ?? '');
 
         $this->settings->set('theme', 'primary_color', $settings['primary_color'] ?? '#0f766e');
         $this->settings->set('theme', 'secondary_color', $settings['secondary_color'] ?? '#f59e0b');
-        $this->settings->set('theme', 'dark_mode_default', $request->boolean('settings.dark_mode_default'), 'boolean');
+        $this->settings->set('theme', 'dark_mode_default', $this->settingsBoolean($request, 'dark_mode_default'), 'boolean');
 
         if ($request->boolean('remove_logo')) {
             $this->settings->removeBrandAsset('logo');
@@ -139,9 +146,24 @@ class SettingsController extends Controller
             'settings.abandoned_cart_email' => ['nullable', 'boolean'],
             'settings.abandoned_cart_sms' => ['nullable', 'boolean'],
             'settings.low_stock_alert' => ['nullable', 'boolean'],
+            'settings.abandoned_cart_recovery_coupon' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $this->settings->updateGroup('notifications', $request->input('settings'));
+        $input = $request->input('settings', []);
+        $booleanKeys = [
+            'email_order_confirmation',
+            'sms_order_confirmation',
+            'abandoned_cart_email',
+            'abandoned_cart_sms',
+            'low_stock_alert',
+        ];
+
+        foreach ($booleanKeys as $key) {
+            $this->settings->set('notifications', $key, $this->settingsBoolean($request, $key, "settings.{$key}"), 'boolean');
+            unset($input[$key]);
+        }
+
+        $this->settings->updateGroup('notifications', $input);
 
         return back()->with('success', 'Notification settings updated.');
     }
@@ -173,12 +195,28 @@ class SettingsController extends Controller
             'settings.tax_label' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $payload = $request->input('settings');
-        $this->settings->set('commerce', 'tax_enabled', $request->boolean('settings.tax_enabled'), 'boolean');
+        $payload = $request->input('settings', []);
+        $this->settings->set('commerce', 'tax_enabled', $this->settingsBoolean($request, 'tax_enabled'), 'boolean');
         unset($payload['tax_enabled']);
         $this->settings->updateGroup('commerce', $payload);
 
         return back()->with('success', 'Commerce settings updated.');
+    }
+
+    protected function normalizeSettingsInput(array $settings): array
+    {
+        foreach (['store_email', 'store_phone', 'site_tagline', 'store_address', 'maintenance_message'] as $key) {
+            if (array_key_exists($key, $settings) && $settings[$key] === '') {
+                $settings[$key] = null;
+            }
+        }
+
+        return $settings;
+    }
+
+    protected function settingsBoolean(Request $request, string $key, ?string $inputKey = null): bool
+    {
+        return filter_var($request->input($inputKey ?? "settings.{$key}"), FILTER_VALIDATE_BOOLEAN);
     }
 
     public function modules(): Response

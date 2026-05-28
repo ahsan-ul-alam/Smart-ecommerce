@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
+import Input from '../../../Components/UI/Input';
 import FlashMessage from '../../../Components/UI/FlashMessage';
 import { Card, CardBody, CardHeader } from '../../../Components/UI/Card';
 
@@ -11,6 +12,7 @@ export default function Notifications({ settings }) {
             sms_order_confirmation: settings.sms_order_confirmation ?? true,
             abandoned_cart_email: settings.abandoned_cart_email ?? true,
             abandoned_cart_sms: settings.abandoned_cart_sms ?? false,
+            abandoned_cart_recovery_coupon: settings.abandoned_cart_recovery_coupon ?? '',
         },
     });
 
@@ -46,6 +48,14 @@ export default function Notifications({ settings }) {
                                 />
                             </label>
                         ))}
+                        <div>
+                            <Input
+                                label="Default recovery coupon code"
+                                value={data.settings.abandoned_cart_recovery_coupon}
+                                onChange={(e) => setData('settings', { ...data.settings, abandoned_cart_recovery_coupon: e.target.value })}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Appended to cart link when coupon module is enabled.</p>
+                        </div>
                         <Button type="submit" loading={processing}>Save notification settings</Button>
                     </form>
                 </CardBody>

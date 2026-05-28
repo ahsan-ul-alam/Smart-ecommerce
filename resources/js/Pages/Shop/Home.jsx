@@ -1,7 +1,6 @@
 import { Link } from '@inertiajs/react';
 import ShopLayout from '../../Layouts/ShopLayout';
-import ProductThumbnail from '../../Components/Catalog/ProductThumbnail';
-import ProductPrice from '../../Components/Catalog/ProductPrice';
+import ProductCard from '../../Components/Shop/ProductCard';
 import RecentlyViewedGrid from '../../Components/Shop/RecentlyViewedGrid';
 
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
@@ -26,11 +25,14 @@ function SectionRenderer({ section, featured, flashSale, flashProducts }) {
     switch (section.type) {
         case 'hero':
             return (
-                <section className="bg-gradient-to-br from-teal-700 to-teal-900 text-white">
-                    <div className="max-w-7xl mx-auto px-6 py-20 text-center">
-                        <h1 className="text-4xl md:text-5xl font-bold mb-4">{section.title || 'Shop Smart, Pay Easy'}</h1>
-                        <p className="text-teal-100 text-lg max-w-xl mx-auto mb-8">{section.subtitle || 'Cash on Delivery across Bangladesh.'}</p>
-                        <Link href={section.link || '/shop/products'} className="inline-block bg-white text-teal-800 px-8 py-3 rounded-lg font-semibold hover:bg-teal-50">
+                <section className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary via-teal-800 to-slate-900" />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_50%)]" />
+                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center text-white">
+                        <p className="text-sm font-semibold uppercase tracking-widest text-teal-200/90 mb-4">Bangladesh Smart Commerce</p>
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 tracking-tight text-balance">{section.title || 'Shop Smart, Pay Easy'}</h1>
+                        <p className="text-teal-50/90 text-lg max-w-xl mx-auto mb-8">{section.subtitle || 'Cash on Delivery across Bangladesh.'}</p>
+                        <Link href={section.link || '/shop/products'} className="inline-flex items-center justify-center bg-white text-primary px-8 py-3.5 rounded-2xl font-bold hover:bg-teal-50 transition-premium shadow-lg">
                             {section.button_text || 'Browse Products'}
                         </Link>
                     </div>
@@ -51,7 +53,7 @@ function SectionRenderer({ section, featured, flashSale, flashProducts }) {
             return (
                 <section className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
                     {badges.map(([title, desc]) => (
-                        <div key={title} className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 text-center">
+                        <div key={title} className="glass-panel p-6 text-center">
                             <h3 className="font-semibold text-slate-800 dark:text-white">{title}</h3>
                             <p className="text-sm text-slate-500 mt-1">{desc}</p>
                         </div>
@@ -74,15 +76,9 @@ function SectionRenderer({ section, featured, flashSale, flashProducts }) {
                         )}
                     </div>
                     {section.subtitle && <p className="text-slate-500 mb-6 -mt-4">{section.subtitle}</p>}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                         {products.map((product) => (
-                            <Link key={product.id} href={`/shop/products/${product.slug}`} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg group">
-                                <div className="aspect-square overflow-hidden group-hover:opacity-95"><ProductThumbnail product={product} /></div>
-                                <div className="p-4">
-                                    <h3 className="font-medium text-slate-800 dark:text-white line-clamp-2">{product.name}</h3>
-                                    <div className="mt-2"><ProductPrice product={product} size="sm" /></div>
-                                </div>
-                            </Link>
+                            <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 </section>
@@ -124,11 +120,12 @@ export default function Home({ featured = [], banners = [], flashSale = null, fl
             ))}
 
             {!hasHero && (
-                <section className="bg-gradient-to-br from-teal-700 to-teal-900 text-white">
-                    <div className="max-w-7xl mx-auto px-6 py-20 text-center">
-                        <h1 className="text-4xl md:text-5xl font-bold mb-4">Shop Smart, Pay Easy</h1>
-                        <p className="text-teal-100 text-lg max-w-xl mx-auto mb-8">Cash on Delivery across Bangladesh. Fast delivery, trusted products.</p>
-                        <Link href="/shop/products" className="inline-block bg-white text-teal-800 px-8 py-3 rounded-lg font-semibold hover:bg-teal-50">Browse Products</Link>
+                <section className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary via-teal-800 to-slate-900" />
+                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center text-white">
+                        <h1 className="text-4xl sm:text-5xl font-bold mb-4 tracking-tight">Shop Smart, Pay Easy</h1>
+                        <p className="text-teal-50/90 text-lg max-w-xl mx-auto mb-8">Cash on Delivery across Bangladesh. Fast delivery, trusted products.</p>
+                        <Link href="/shop/products" className="inline-flex bg-white text-primary px-8 py-3.5 rounded-2xl font-bold hover:bg-teal-50 transition-premium shadow-lg">Browse Products</Link>
                     </div>
                 </section>
             )}
@@ -144,15 +141,9 @@ export default function Home({ featured = [], banners = [], flashSale = null, fl
                         </div>
                         <Link href={`/shop/flash-sales/${flashSale.slug}`} className="text-teal-700 font-medium text-sm hover:underline">Shop flash sale →</Link>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                         {flashProducts.map((product) => (
-                            <Link key={product.id} href={`/shop/products/${product.slug}`} className="bg-white dark:bg-slate-800 rounded-xl border border-amber-200 dark:border-amber-800 overflow-hidden hover:shadow-lg">
-                                <div className="aspect-square overflow-hidden"><ProductThumbnail product={product} /></div>
-                                <div className="p-4">
-                                    <h3 className="font-medium text-slate-800 dark:text-white line-clamp-2">{product.name}</h3>
-                                    <div className="mt-2"><ProductPrice product={product} size="sm" /></div>
-                                </div>
-                            </Link>
+                            <ProductCard key={product.id} product={product} className="ring-2 ring-amber-400/30" />
                         ))}
                     </div>
                 </section>
@@ -188,15 +179,9 @@ export default function Home({ featured = [], banners = [], flashSale = null, fl
             {featured.length > 0 && !hasFeaturedSection && (
                 <section className="max-w-7xl mx-auto px-6 py-12">
                     <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Featured Products</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                         {featured.map((product) => (
-                            <Link key={product.id} href={`/shop/products/${product.slug}`} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg group">
-                                <div className="aspect-square overflow-hidden group-hover:opacity-95"><ProductThumbnail product={product} /></div>
-                                <div className="p-4">
-                                    <h3 className="font-medium text-slate-800 dark:text-white line-clamp-2">{product.name}</h3>
-                                    <div className="mt-2"><ProductPrice product={product} size="sm" /></div>
-                                </div>
-                            </Link>
+                            <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 </section>

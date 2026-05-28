@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
-import { Search, Eye, Download } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Eye, Download, Truck } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
 import Select from '../../../Components/UI/Select';
@@ -17,7 +18,40 @@ const statusVariant = {
 
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
 
-export default function OrdersIndex({ orders = { data: [], links: [], meta: { last_page: 1 } }, filters = {}, statuses = [], sources = [] }) {
+function QuickShip({ order, couriers }) {
+    const [courier, setCourier] = useState(couriers[0]?.value ?? 'pathao');
+
+    if (order.shipment?.tracking_id) {
+        return (
+            <span className="text-xs text-slate-500">
+                {order.shipment.courier} · {order.shipment.tracking_id}
+            </span>
+        );
+    }
+
+    const ship = () => {
+        router.post(`/admin/orders/${order.id}/shipment`, { courier }, { preserveScroll: true });
+    };
+
+    return (
+        <div className="flex items-center gap-1 min-w-[140px]">
+            <select
+                value={courier}
+                onChange={(e) => setCourier(e.target.value)}
+                className="text-xs rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1 py-1 max-w-[90px]"
+            >
+                {couriers.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+            </select>
+            <button type="button" onClick={ship} className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100" title="Create shipment">
+                <Truck size={14} />
+            </button>
+        </div>
+    );
+}
+
+export default function OrdersIndex({ orders = { data: [], links: [], meta: { last_page: 1 } }, filters = {}, statuses = [], sources = [], couriers = [] }) {
     const rows = Array.isArray(orders?.data) ? orders.data : [];
     const statusOptions = Array.isArray(statuses) ? statuses : Object.values(statuses ?? {});
 
@@ -48,7 +82,7 @@ export default function OrdersIndex({ orders = { data: [], links: [], meta: { la
                         className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
                 </div>
                 <Select name="status" defaultValue={filters.status || ''} placeholder="All statuses"
-                    options={statusOptions.map((s) => ({ value: s.value, label: s.label }))} className="w-40" />
+                    options={[{ value: '', label: 'All statuses' }, ...statusOptions.map((s) => ({ value: s.value, label: s.label }))]} className="w-40" />
                 <Select name="source" defaultValue={filters.source || ''} placeholder="All channels"
                     options={sources.map((s) => ({ value: s.value, label: s.label }))} className="w-36" />
                 <Button type="submit" variant="secondary">Filter</Button>
@@ -65,6 +99,7 @@ export default function OrdersIndex({ orders = { data: [], links: [], meta: { la
                                 <th className="px-6 py-3">Order</th>
                                 <th className="px-6 py-3">Channel</th>
                                 <th className="px-6 py-3">Customer</th>
+                                <th className="px-6 py-3">Courier</th>
                                 <th className="px-6 py-3">Total</th>
                                 <th className="px-6 py-3">Payment</th>
                                 <th className="px-6 py-3">Status</th>
@@ -82,6 +117,9 @@ export default function OrdersIndex({ orders = { data: [], links: [], meta: { la
                                     <td className="px-6 py-4">
                                         <p className="font-medium text-slate-800 dark:text-white">{order.customer_name}</p>
                                         <p className="text-xs text-slate-400">{order.guest_phone || order.user?.email}</p>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <QuickShip order={order} couriers={couriers} />
                                     </td>
                                     <td className="px-6 py-4 font-medium">{formatPrice(order.total)}</td>
                                     <td className="px-6 py-4">
@@ -104,7 +142,7 @@ export default function OrdersIndex({ orders = { data: [], links: [], meta: { la
                                 </tr>
                             ))}
                             {!rows.length && (
-                                <tr><td colSpan={8} className="px-6 py-16 text-center text-slate-400">No orders yet.</td></tr>
+                                <tr><td colSpan={9} className="px-6 py-16 text-center text-slate-400">No orders yet.</td></tr>
                             )}
                         </tbody>
                     </table>

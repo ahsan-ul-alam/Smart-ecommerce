@@ -7,6 +7,7 @@ use App\Domain\Enums\PaymentMethod;
 use App\Domain\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderShipment;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -25,6 +26,57 @@ class ReportService
             'payment_methods' => $this->paymentMethods($days),
             'top_products' => $this->topProducts($days),
             'sales_by_source' => $this->salesBySource($days),
+            'delivery' => $this->deliveryAnalytics($days),
+        ];
+    }
+
+    public function deliveryAnalytics(int $days): array
+    {
+        $since = $days > 0 ? now()->subDays($days)->startOfDay() : null;
+
+        $query = OrderShipment::query();
+        if ($since) {
+            $query->where('created_at', '>=', $since);
+        }
+
+        $total = (clone $query)->count();
+
+        $byCourier = (clone $query)
+            ->selectRaw('courier, COUNT(*) as count')
+            ->groupBy('courier')
+            ->orderByDesc('count')
+            ->get()
+            ->map(fn ($row) => [
+                'courier' => $row->courier,
+                'label' => ucfirst($row->courier),
+                'count' => (int) $row->count,
+            ])
+            ->values()
+            ->all();
+
+        $byStatus = (clone $query)
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->orderByDesc('count')
+            ->get()
+            ->map(fn ($row) => [
+                'status' => $row->status,
+                'label' => ucfirst(str_replace('_', ' ', (string) $row->status)),
+                'count' => (int) $row->count,
+            ])
+            ->values()
+            ->all();
+
+        $failedStatuses = ['failed', 'cancelled', 'returned', 'undelivered'];
+        $failed = collect($byStatus)
+            ->filter(fn ($row) => in_array(strtolower($row['status']), $failedStatuses, true))
+            ->sum('count');
+
+        return [
+            'total_shipments' => $total,
+            'failed_deliveries' => $failed,
+            'by_courier' => $byCourier,
+            'by_status' => $byStatus,
         ];
     }
 
@@ -170,11 +222,13 @@ class ReportService
                 'id' => $order->id,
                 'order_number' => $order->order_number,
                 'customer_name' => $order->customerName(),
+                'customer_email' => $order->user?->email ?? $order->guest_email,
                 'status' => $order->status?->value,
                 'status_label' => $order->status?->label(),
                 'payment_status' => $order->payment_status?->value,
                 'total' => (float) $order->total,
                 'created_at' => $order->created_at?->toISOString(),
+                'created_at_label' => $order->created_at?->diffForHumans(),
             ])
             ->all();
     }

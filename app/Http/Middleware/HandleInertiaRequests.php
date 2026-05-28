@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Page;
 use App\Services\Commerce\CartService;
+use App\Services\Marketing\CampaignService;
 use App\Services\Modules\ModuleService;
 use App\Services\Settings\SettingService;
 use Illuminate\Http\Request;
@@ -71,6 +72,21 @@ class HandleInertiaRequests extends Middleware
                 ->where('is_published', true)
                 ->orderBy('title')
                 ->get(['title', 'slug']),
+            'campaignPopup' => function () use ($request, $modules) {
+                if (! $modules->isEnabled('marketing_campaign')) {
+                    return null;
+                }
+
+                $page = match (true) {
+                    $request->routeIs('home') => 'home',
+                    $request->routeIs('shop.products.*', 'shop.products') => 'shop',
+                    $request->routeIs('shop.cart*') => 'cart',
+                    $request->routeIs('checkout*') => 'checkout',
+                    default => 'all',
+                };
+
+                return app(CampaignService::class)->activePopup($request, $page);
+            },
         ];
     }
 

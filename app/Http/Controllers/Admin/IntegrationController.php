@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Enums\IntegrationType;
 use App\Http\Controllers\Controller;
 use App\Models\Integration;
+use App\Services\Integrations\IntegrationManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -36,5 +38,24 @@ class IntegrationController extends Controller
         $integration->update($data);
 
         return back()->with('success', 'Integration updated.');
+    }
+
+    public function test(Integration $integration, IntegrationManager $manager): RedirectResponse
+    {
+        try {
+            $ok = match ($integration->type) {
+                IntegrationType::Payment => $manager->resolvePayment($integration->provider)->testConnection(),
+                IntegrationType::Courier => $manager->resolveCourier($integration->provider)->testConnection(),
+                IntegrationType::Sms => $manager->resolveSms($integration->provider)->testConnection(),
+                IntegrationType::Email => $manager->resolveEmail($integration->provider)->testConnection(),
+            };
+
+            return back()->with(
+                $ok ? 'success' : 'error',
+                $ok ? ucfirst($integration->provider).' connection OK.' : ucfirst($integration->provider).' connection failed.'
+            );
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Test failed: '.$e->getMessage());
+        }
     }
 }

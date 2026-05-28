@@ -9,6 +9,7 @@ use App\Models\Coupon;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Services\Marketing\CampaignService;
 use App\Services\Marketing\FlashSaleService;
 use App\Services\Settings\SettingService;
 use App\Support\MediaUrl;
@@ -21,6 +22,7 @@ class CartService
     public function __construct(
         protected SettingService $settings,
         protected FlashSaleService $flashSales,
+        protected CampaignService $campaigns,
         protected ShippingZoneService $shippingZones,
     ) {}
 
@@ -123,10 +125,14 @@ class CartService
 
         $subtotal = $cart->items->sum(fn ($item) => $item->lineTotal());
 
-        $discount = 0;
+        $couponDiscount = 0;
         if ($cart->coupon) {
-            $discount = $cart->coupon->calculateDiscount($subtotal);
+            $couponDiscount = $cart->coupon->calculateDiscount($subtotal);
         }
+
+        $afterCoupon = max(0, $subtotal - $couponDiscount);
+        $campaignDiscount = $this->campaigns->scheduledDiscount($afterCoupon);
+        $discount = $couponDiscount + $campaignDiscount;
 
         $shippingResult = $this->shippingZones->calculate(
             max(0, $subtotal - $discount),
@@ -142,6 +148,8 @@ class CartService
         return [
             'subtotal' => round($subtotal, 2),
             'discount' => round($discount, 2),
+            'campaign_discount' => round($campaignDiscount, 2),
+            'coupon_discount' => round($couponDiscount, 2),
             'loyalty_discount' => 0,
             'wallet_used' => 0,
             'shipping' => round($shipping, 2),
@@ -302,7 +310,7 @@ class CartService
 
     protected function calculateTax(float $taxable): float
     {
-        if (! $this->settings->get('commerce', 'tax_enabled', false)) {
+        if (! $this->settings->getBoolean('commerce', 'tax_enabled', false)) {
             return 0.0;
         }
 

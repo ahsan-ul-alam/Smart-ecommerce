@@ -35,8 +35,14 @@ class ReturnRequestService
         return true;
     }
 
-    public function submit(Order $order, User $user, string $reason, ?string $note = null): OrderReturnRequest
-    {
+    public function submit(
+        Order $order,
+        User $user,
+        string $reason,
+        ?string $note = null,
+        string $returnType = 'refund',
+        ?int $exchangeProductId = null,
+    ): OrderReturnRequest {
         if ($order->user_id !== $user->id) {
             throw ValidationException::withMessages(['order' => 'Unauthorized.']);
         }
@@ -45,10 +51,16 @@ class ReturnRequestService
             throw ValidationException::withMessages(['order' => 'This order is not eligible for a return request.']);
         }
 
+        if ($returnType === 'exchange' && ! $exchangeProductId) {
+            throw ValidationException::withMessages(['exchange_product_id' => 'Select a product for exchange.']);
+        }
+
         return OrderReturnRequest::query()->create([
             'order_id' => $order->id,
             'user_id' => $user->id,
             'status' => ReturnRequestStatus::Pending,
+            'return_type' => $returnType,
+            'exchange_product_id' => $exchangeProductId,
             'reason' => $reason,
             'customer_note' => $note,
         ]);
@@ -75,9 +87,27 @@ class ReturnRequestService
         $order = $request->order;
 
         if ($status === ReturnRequestStatus::Approved) {
-            if ($order->payment_status === PaymentStatus::Paid) {
-                $this->orders->updatePaymentStatus($order, PaymentStatus::Refunded);
-                $this->orders->updateStatus($order, OrderStatus::Refunded, 'Return approved — refunded', $reviewerId);
+            if ($request->return_type === 'exchange') {
+                $this->orders->updateStatus(
+                    $order,
+                    OrderStatus::Processing,
+                    'Exchange approved — replacement processing',
+                    $reviewerId
+                );
+            } elseif ($request->partial_amount > 0) {
+                $this->orders->recordPartialRefund(
+                    $order,
+                    (float) $request->partial_amount,
+                    'Partial refund via return request',
+                    $reviewerId
+                );
+            } elseif ($order->payment_status === PaymentStatus::Paid) {
+                $this->orders->recordPartialRefund(
+                    $order,
+                    (float) $order->total - (float) $order->refunded_amount,
+                    'Return approved — full refund',
+                    $reviewerId
+                );
             } else {
                 $this->orders->updateStatus($order, OrderStatus::Returned, 'Return approved', $reviewerId);
             }

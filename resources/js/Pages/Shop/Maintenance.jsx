@@ -9,7 +9,9 @@ export default function Maintenance({ message }) {
                     <p className="text-5xl mb-4">🔧</p>
                     <h1 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Under Maintenance</h1>
                     <p className="text-slate-500 text-sm">{message}</p>
-                    <p className="text-xs text-slate-400 mt-6">Store admins can still access the admin panel.</p>
+                    <p className="text-xs text-slate-400 mt-6">
+                        <a href="/login" className="text-teal-700 hover:underline">Admin login</a>
+                    </p>
                 </CardBody>
             </Card>
         </GuestLayout>

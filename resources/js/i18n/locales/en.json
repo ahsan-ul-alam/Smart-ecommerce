@@ -5,7 +5,13 @@
         "orders": "Orders",
         "customers": "Customers",
         "settings": "Settings",
-        "logout": "Logout"
+        "logout": "Logout",
+        "shop": "Shop",
+        "cart": "Cart",
+        "account": "Account",
+        "team": "Team",
+        "reports": "Reports",
+        "special_product": "Special Product"
     },
     "auth": {
         "login": "Sign In",
@@ -13,8 +19,21 @@
         "email": "Email Address",
         "password": "Password",
         "remember": "Remember me",
+        "forgot_password": "Forgot password?",
         "no_account": "Don't have an account?",
-        "has_account": "Already have an account?"
+        "has_account": "Already have an account?",
+        "verify_email": "Verify your email"
+    },
+    "shop": {
+        "search_placeholder": "Search products, brands…",
+        "add_to_cart": "Add to cart",
+        "checkout": "Checkout",
+        "cart_empty": "Your cart is empty",
+        "featured": "Featured",
+        "flash_sale": "Flash Sale",
+        "contact": "Contact",
+        "faq": "FAQ",
+        "blog": "Blog"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -24,15 +43,26 @@
         "customers": "Customers",
         "products": "Products"
     },
+    "orders": {
+        "ship_courier": "Ship with courier",
+        "partial_refund": "Partial refund",
+        "retry_payment": "Retry payment"
+    },
     "settings": {
         "general": "General Settings",
         "modules": "Modules",
         "integrations": "Integrations",
-        "save": "Save Changes"
+        "save": "Save Changes",
+        "queue_monitor": "Queue monitor"
     },
     "common": {
         "loading": "Loading...",
         "enabled": "Enabled",
-        "disabled": "Disabled"
+        "disabled": "Disabled",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "view": "View"
     }
 }

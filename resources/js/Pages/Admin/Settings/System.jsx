@@ -13,7 +13,7 @@ const tools = [
     { type: 'optimize', label: 'Clear all optimization', desc: 'Runs optimize:clear (config, routes, views, events).', icon: Sparkles },
 ];
 
-export default function SystemSettings() {
+export default function SystemSettings({ queue = {} }) {
     const run = (type) => {
         if (!confirm('Run this maintenance action now?')) {
             return;
@@ -27,6 +27,25 @@ export default function SystemSettings() {
             <p className="text-sm text-slate-500 mb-6">
                 Maintenance utilities for production deployments. Actions are logged in audit and activity logs.
             </p>
+
+            <Card className="max-w-2xl mb-6">
+                <CardHeader title="Queue monitor" subtitle={`Driver: ${queue.driver ?? '—'} · Connection: ${queue.connection ?? '—'}`} />
+                <CardBody className="grid sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p className="text-slate-500">Pending jobs</p>
+                        <p className="text-2xl font-bold">{queue.pending_jobs ?? 0}</p>
+                    </div>
+                    <div>
+                        <p className="text-slate-500">Failed jobs</p>
+                        <p className="text-2xl font-bold text-amber-600">{queue.failed_jobs ?? 0}</p>
+                    </div>
+                    <p className="sm:col-span-2 text-xs text-slate-500">
+                        {queue.horizon_available
+                            ? 'Laravel Horizon can be installed on Linux/production (requires pcntl). Use Redis + php artisan queue:work locally on Windows.'
+                            : 'Horizon requires pcntl (Linux/WSL). Use database or Redis queue with queue:work.'}
+                    </p>
+                </CardBody>
+            </Card>
 
             <div className="grid gap-4 max-w-2xl">
                 {tools.map(({ type, label, desc, icon: Icon }) => (

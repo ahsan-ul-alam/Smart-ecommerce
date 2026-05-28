@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\Audit\ActivityLogService;
 use App\Services\Audit\AuditLogService;
+use App\Services\System\QueueMonitorService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -16,13 +17,16 @@ class SystemController extends Controller
     public function __construct(
         protected AuditLogService $audit,
         protected ActivityLogService $activity,
+        protected QueueMonitorService $queues,
     ) {}
 
     public function index(Request $request): Response
     {
         abort_unless($request->user()->can('settings.manage'), 403);
 
-        return Inertia::render('Admin/Settings/System');
+        return Inertia::render('Admin/Settings/System', [
+            'queue' => $this->queues->stats(),
+        ]);
     }
 
     public function clear(Request $request): RedirectResponse

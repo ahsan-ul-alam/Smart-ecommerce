@@ -16,7 +16,11 @@ class CheckMaintenanceMode
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $this->settings->get('general', 'maintenance_mode', false)) {
+        if ($request->is('up', 'build/*', 'storage/*')) {
+            return $next($request);
+        }
+
+        if (! $this->settings->isMaintenanceMode()) {
             return $next($request);
         }
 
@@ -24,8 +28,11 @@ class CheckMaintenanceMode
             return $next($request);
         }
 
+        $message = (string) $this->settings->get('general', 'maintenance_message', '')
+            ?: 'We are performing scheduled maintenance. Please check back soon.';
+
         return Inertia::render('Shop/Maintenance', [
-            'message' => 'We are performing scheduled maintenance. Please check back soon.',
+            'message' => $message,
         ])->toResponse($request)->setStatusCode(503);
     }
 
@@ -35,11 +42,7 @@ class CheckMaintenanceMode
             return true;
         }
 
-        if ($request->is('login', 'logout', 'register', 'auth/*')) {
-            return true;
-        }
-
-        if ($request->user()?->isAdmin()) {
+        if ($request->is('login', 'logout', 'register', 'forgot-password', 'reset-password/*', 'otp/*', 'auth/*')) {
             return true;
         }
 

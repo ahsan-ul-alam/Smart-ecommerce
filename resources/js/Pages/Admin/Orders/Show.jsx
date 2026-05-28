@@ -1,6 +1,5 @@
-import { useForm } from '@inertiajs/react';
-import { ArrowLeft, Printer } from 'lucide-react';
-import { Link } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
+import { ArrowLeft, Printer, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import { formatShippingAddress } from '../../../utils/formatShippingAddress';
 import Button from '../../../Components/UI/Button';
@@ -141,10 +140,21 @@ export default function OrderShow({ order, statuses, paymentStatuses, couriers =
                         <CardHeader title="Shipment" />
                         <CardBody>
                             {order.shipment ? (
-                                <div className="text-sm space-y-1">
+                                <div className="text-sm space-y-2">
                                     <p><span className="text-slate-500">Courier:</span> {order.shipment.courier}</p>
                                     <p><span className="text-slate-500">Tracking:</span> {order.shipment.tracking_id || '—'}</p>
                                     <p><span className="text-slate-500">Status:</span> {order.shipment.status}</p>
+                                    {order.shipment.tracking_id && (
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            className="w-full"
+                                            onClick={() => router.post(`/admin/orders/${order.id}/shipment/sync`, {}, { preserveScroll: true })}
+                                        >
+                                            <RefreshCw size={16} className="inline mr-1.5" />
+                                            Sync tracking
+                                        </Button>
+                                    )}
                                 </div>
                             ) : (
                                 <form onSubmit={(e) => { e.preventDefault(); shipmentForm.post(`/admin/orders/${order.id}/shipment`); }} className="space-y-3">
@@ -159,6 +169,35 @@ export default function OrderShow({ order, statuses, paymentStatuses, couriers =
                             )}
                         </CardBody>
                     </Card>
+
+                    {order.refundable_remaining > 0 && (
+                        <Card>
+                            <CardHeader title="Partial refund" />
+                            <CardBody>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    router.post(`/admin/orders/${order.id}/partial-refund`, Object.fromEntries(fd), { preserveScroll: true });
+                                }} className="space-y-3">
+                                    <p className="text-xs text-slate-500">Remaining: {formatPrice(order.refundable_remaining)}</p>
+                                    <input name="amount" type="number" step="0.01" max={order.refundable_remaining} className="input-premium w-full" placeholder="Amount" required />
+                                    <Textarea name="note" rows={2} placeholder="Note (optional)" />
+                                    <Button type="submit" variant="secondary" className="w-full">Record refund</Button>
+                                </form>
+                            </CardBody>
+                        </Card>
+                    )}
+
+                    {order.payment_status !== 'paid' && order.payment_method !== 'cod' && (
+                        <Card>
+                            <CardHeader title="Payment" />
+                            <CardBody>
+                                <Button variant="secondary" className="w-full" onClick={() => router.post(`/admin/orders/${order.id}/retry-payment`, {}, { preserveScroll: true })}>
+                                    Retry payment
+                                </Button>
+                            </CardBody>
+                        </Card>
+                    )}
 
                     <Card>
                         <CardHeader title="Admin Note" />

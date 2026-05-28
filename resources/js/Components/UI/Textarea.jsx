@@ -8,14 +8,7 @@ export default function Textarea({ label, error, className, rows = 4, ...props }
             )}
             <textarea
                 rows={rows}
-                className={clsx(
-                    'w-full px-3 py-2.5 rounded-lg border text-sm resize-y',
-                    'bg-white dark:bg-slate-800 text-slate-900 dark:text-white',
-                    'border-slate-300 dark:border-slate-600',
-                    'focus:outline-none focus:ring-2 focus:ring-teal-500',
-                    error && 'border-red-500',
-                    className
-                )}
+                className={clsx('input-premium resize-y', error && 'border-red-400', className)}
                 {...props}
             />
             {error && <p className="text-xs text-red-500">{error}</p>}

@@ -46,7 +46,13 @@ class SettingRepository implements SettingRepositoryInterface
             if (is_array($payload)) {
                 $this->set($group, $key, $payload['value'] ?? null, $payload['type'] ?? 'string');
             } else {
-                $this->set($group, $key, $payload);
+                $type = match (true) {
+                    is_bool($payload) => 'boolean',
+                    is_int($payload) => 'integer',
+                    is_float($payload) => 'float',
+                    default => 'string',
+                };
+                $this->set($group, $key, $payload, $type);
             }
         }
     }

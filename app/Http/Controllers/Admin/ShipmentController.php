@@ -45,4 +45,23 @@ class ShipmentController extends Controller
 
         return back()->with('success', 'Shipment created with '.$request->courier);
     }
+
+    public function sync(Order $order): RedirectResponse
+    {
+        $shipment = $order->shipment;
+
+        if (! $shipment?->tracking_id) {
+            return back()->with('error', 'No tracking ID on this shipment.');
+        }
+
+        $courier = $this->integrations->resolveCourier($shipment->courier);
+        $result = $courier->trackShipment($shipment->tracking_id);
+
+        $shipment->update([
+            'status' => $result['status'] ?? $shipment->status,
+            'meta' => array_merge($shipment->meta ?? [], ['last_track' => $result]),
+        ]);
+
+        return back()->with('success', 'Tracking updated from '.$shipment->courier);
+    }
 }

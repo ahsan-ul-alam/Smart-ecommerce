@@ -1,26 +1,20 @@
 import clsx from 'clsx';
 
-export default function Select({ label, error, options = [], placeholder, className, ...props }) {
+export default function Select({ label, error, options = [], className, ...props }) {
     return (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
             {label && (
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {label}
+                </label>
             )}
             <select
-                className={clsx(
-                    'w-full px-3 py-2.5 rounded-lg border text-sm',
-                    'bg-white dark:bg-slate-800 text-slate-900 dark:text-white',
-                    'border-slate-300 dark:border-slate-600',
-                    'focus:outline-none focus:ring-2 focus:ring-teal-500',
-                    error && 'border-red-500',
-                    className
-                )}
+                className={clsx('input-premium', error && 'border-red-400', className)}
                 {...props}
             >
-                {placeholder && <option value="">{placeholder}</option>}
                 {options.map((opt) => (
-                    <option key={opt.value ?? opt.id} value={opt.value ?? opt.id}>
-                        {opt.label ?? opt.name}
+                    <option key={opt.value} value={opt.value}>
+                        {opt.label}
                     </option>
                 ))}
             </select>

@@ -55,6 +55,17 @@ export default function OrderShow({ order, returnReasons = {} }) {
                         </CardBody>
                     </Card>
 
+                    {order.shipment?.tracking_id && (
+                        <Card>
+                            <CardHeader title="Delivery tracking" />
+                            <CardBody className="text-sm space-y-2">
+                                <p><span className="text-slate-500">Courier:</span> <span className="capitalize font-medium">{order.shipment.courier}</span></p>
+                                <p><span className="text-slate-500">Tracking ID:</span> <span className="font-mono">{order.shipment.tracking_id}</span></p>
+                                <p><span className="text-slate-500">Status:</span> <Badge>{order.shipment.status}</Badge></p>
+                            </CardBody>
+                        </Card>
+                    )}
+
                     {order.can_request_return && (
                         <Card>
                             <CardHeader title="Request a return" />

@@ -1,14 +1,21 @@
 import clsx from 'clsx';
 
 const variants = {
-    primary: 'bg-teal-700 hover:bg-teal-800 text-white',
-    secondary: 'bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white',
-    danger: 'bg-red-600 hover:bg-red-700 text-white',
-    ghost: 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200',
+    primary: 'bg-primary hover:bg-teal-800 text-white btn-primary-glow',
+    secondary: 'glass text-slate-700 dark:text-slate-200 hover:bg-white/90 dark:hover:bg-slate-800/90',
+    danger: 'bg-red-600 hover:bg-red-700 text-white shadow-sm',
+    ghost: 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200',
+};
+
+const sizes = {
+    sm: 'px-3 py-1.5 text-xs rounded-lg',
+    md: 'px-4 py-2.5 text-sm rounded-xl',
+    lg: 'px-5 py-3 text-sm rounded-xl',
 };
 
 export default function Button({
     variant = 'primary',
+    size = 'md',
     className,
     loading,
     children,
@@ -17,8 +24,10 @@ export default function Button({
     return (
         <button
             className={clsx(
-                'inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+                'inline-flex items-center justify-center gap-2 font-medium transition-premium',
+                'disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]',
                 variants[variant],
+                sizes[size],
                 className
             )}
             disabled={loading || props.disabled}

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\FlashSaleController;
+use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\IntegrationController;
@@ -29,8 +30,15 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\TeamController;
 use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Admin\NotificationLogController;
+use App\Http\Controllers\Admin\AlertController;
+use App\Http\Controllers\Admin\PaymentTransactionController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Webhooks\CourierWebhookController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Customer\AddressController as CustomerAddressController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
@@ -39,6 +47,7 @@ use App\Http\Controllers\Customer\RewardsController;
 use App\Http\Controllers\Shop\BlogController as ShopBlogController;
 use App\Http\Controllers\Shop\PageController as ShopPageController;
 use App\Http\Controllers\Shop\FlashSaleController as ShopFlashSaleController;
+use App\Http\Controllers\Shop\CampaignController;
 use App\Http\Controllers\Shop\CartController;
 use App\Http\Controllers\Shop\CheckoutController;
 use App\Http\Controllers\Shop\PaymentController;
@@ -102,11 +111,16 @@ Route::get('/newsletter/unsubscribe', [ShopNewsletterController::class, 'unsubsc
 Route::post('/newsletter/unsubscribe', [ShopNewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe.store');
 
 Route::get('/pages/{slug}', [ShopPageController::class, 'show'])->name('pages.show');
+Route::middleware('module:special_product')->group(function () {
+    Route::get('/offer/{slug}', [\App\Http\Controllers\Shop\SpecialProductController::class, 'show'])->name('offer.show');
+});
 
 Route::prefix('shop')->name('shop.')->group(function () {
     Route::get('/products', [ShopProductController::class, 'index'])->name('products.index');
     Route::get('/products/{slug}', [ShopProductController::class, 'show'])->name('products.show');
-    Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->middleware('auth')->name('products.reviews');
+    Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])
+        ->middleware(['auth', 'module:reviews'])
+        ->name('products.reviews');
 
     Route::get('/contact', [ShopContactController::class, 'index'])->name('contact');
     Route::post('/contact', [ShopContactController::class, 'store'])->name('contact.store');
@@ -116,8 +130,10 @@ Route::prefix('shop')->name('shop.')->group(function () {
     Route::get('/locations/thanas', [LocationController::class, 'thanas'])->name('locations.thanas');
 
     Route::get('/faq', [\App\Http\Controllers\Shop\FaqController::class, 'index'])->name('faq');
-    Route::get('/flash-sales', [ShopFlashSaleController::class, 'index'])->name('flash-sales.index');
-    Route::get('/flash-sales/{slug}', [ShopFlashSaleController::class, 'show'])->name('flash-sales.show');
+    Route::middleware('module:flash_sale')->group(function () {
+        Route::get('/flash-sales', [ShopFlashSaleController::class, 'index'])->name('flash-sales.index');
+        Route::get('/flash-sales/{slug}', [ShopFlashSaleController::class, 'show'])->name('flash-sales.show');
+    });
 
     Route::middleware('module:vendor')->group(function () {
         Route::get('/vendors/{slug}', [ShopVendorController::class, 'show'])->name('vendors.show');
@@ -128,12 +144,15 @@ Route::prefix('shop')->name('shop.')->group(function () {
         Route::get('/blog/{slug}', [ShopBlogController::class, 'show'])->name('blog.show');
     });
 
+    Route::get('/cart/drawer', [CartController::class, 'drawer'])->name('cart.drawer');
     Route::get('/cart', [CartController::class, 'index'])->name('cart');
     Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
     Route::patch('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
-    Route::post('/cart/coupon', [CartController::class, 'applyCoupon'])->name('cart.coupon');
-    Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->name('cart.coupon.remove');
+    Route::middleware('module:coupon')->group(function () {
+        Route::post('/cart/coupon', [CartController::class, 'applyCoupon'])->name('cart.coupon');
+        Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->name('cart.coupon.remove');
+    });
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout/shipping-preview', [CheckoutController::class, 'shippingPreview'])->name('checkout.shipping-preview');
@@ -173,15 +192,34 @@ Route::middleware('auth')->group(function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
+    Route::post('/otp/send', [OtpController::class, 'send'])->middleware('throttle:5,1')->name('otp.send');
+    Route::post('/otp/login', [OtpController::class, 'login'])->middleware('throttle:10,1')->name('otp.login');
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])->name('password.email');
+    Route::get('/reset-password/{token}', [ResetPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [ResetPasswordController::class, 'store'])->name('password.update');
     Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])->name('oauth.redirect');
     Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])->name('oauth.callback');
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
 
-Route::prefix('account')->middleware(['auth'])->name('account.')->group(function () {
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+});
+
+Route::post('/webhooks/courier/{provider}', [CourierWebhookController::class, 'handle'])
+    ->name('webhooks.courier');
+
+Route::prefix('account')->middleware(['auth', 'verified'])->name('account.')->group(function () {
     Route::get('/', [CustomerDashboardController::class, 'index'])->name('dashboard');
     Route::get('/orders', [CustomerOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [CustomerOrderController::class, 'show'])->name('orders.show');
@@ -196,7 +234,10 @@ Route::prefix('account')->middleware(['auth'])->name('account.')->group(function
 
 Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');
+    Route::middleware('module:analytics')->group(function () {
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    });
 
     Route::get('contact-inquiries', [ContactInquiryController::class, 'index'])->name('contact-inquiries.index');
     Route::patch('contact-inquiries/{inquiry}', [ContactInquiryController::class, 'update'])->name('contact-inquiries.update');
@@ -214,8 +255,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('customers/{customer}/loyalty', [CustomerController::class, 'adjustLoyalty'])->name('customers.loyalty');
     Route::patch('customers/{customer}/affiliate', [\App\Http\Controllers\Admin\AffiliateController::class, 'toggleAffiliate'])->name('customers.affiliate');
 
-    Route::get('affiliates', [\App\Http\Controllers\Admin\AffiliateController::class, 'index'])->name('affiliates.index');
-    Route::patch('affiliates/commissions/{commission}', [\App\Http\Controllers\Admin\AffiliateController::class, 'markPaid'])->name('affiliates.commissions.paid');
+    Route::middleware('module:affiliate')->group(function () {
+        Route::get('affiliates', [\App\Http\Controllers\Admin\AffiliateController::class, 'index'])->name('affiliates.index');
+        Route::patch('affiliates/commissions/{commission}', [\App\Http\Controllers\Admin\AffiliateController::class, 'markPaid'])->name('affiliates.commissions.paid');
+    });
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export');
@@ -228,6 +271,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment');
     Route::patch('orders/{order}/note', [OrderController::class, 'updateNote'])->name('orders.note');
     Route::post('orders/{order}/shipment', [ShipmentController::class, 'store'])->name('orders.shipment');
+    Route::post('orders/{order}/shipment/sync', [ShipmentController::class, 'sync'])->name('orders.shipment.sync');
 
     Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
     Route::get('products/import/template', [ProductController::class, 'importTemplate'])->name('products.import.template');
@@ -257,24 +301,46 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('inventory/{product}/restock', [InventoryController::class, 'restock'])->name('inventory.restock');
 
     Route::get('notification-logs', [NotificationLogController::class, 'index'])->name('notification-logs.index');
+    Route::get('payment-transactions', [PaymentTransactionController::class, 'index'])->name('payment-transactions.index');
 
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
-    Route::get('coupons', [CouponController::class, 'index'])->name('coupons.index');
-    Route::get('flash-sales', [FlashSaleController::class, 'index'])->name('flash-sales.index');
-    Route::post('flash-sales', [FlashSaleController::class, 'store'])->name('flash-sales.store');
-    Route::put('flash-sales/{flashSale}', [FlashSaleController::class, 'update'])->name('flash-sales.update');
-    Route::delete('flash-sales/{flashSale}', [FlashSaleController::class, 'destroy'])->name('flash-sales.destroy');
-    Route::post('coupons', [CouponController::class, 'store'])->name('coupons.store');
-    Route::put('coupons/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
-    Route::delete('coupons/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
+    Route::middleware('module:special_product')->group(function () {
+        Route::get('special-products', [\App\Http\Controllers\Admin\SpecialProductController::class, 'index'])->name('special-products.index');
+        Route::post('special-products', [\App\Http\Controllers\Admin\SpecialProductController::class, 'store'])->name('special-products.store');
+        Route::put('special-products/{specialProduct}', [\App\Http\Controllers\Admin\SpecialProductController::class, 'update'])->name('special-products.update');
+        Route::delete('special-products/{specialProduct}', [\App\Http\Controllers\Admin\SpecialProductController::class, 'destroy'])->name('special-products.destroy');
+    });
 
-    Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
-    Route::patch('reviews/{review}/approve', [AdminReviewController::class, 'approve'])->name('reviews.approve');
-    Route::delete('reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::middleware('module:coupon')->group(function () {
+        Route::get('coupons', [CouponController::class, 'index'])->name('coupons.index');
+        Route::post('coupons', [CouponController::class, 'store'])->name('coupons.store');
+        Route::put('coupons/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
+        Route::delete('coupons/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
+    });
+
+    Route::middleware('module:marketing_campaign')->group(function () {
+        Route::get('marketing-campaigns', [MarketingCampaignController::class, 'index'])->name('marketing-campaigns.index');
+        Route::post('marketing-campaigns', [MarketingCampaignController::class, 'store'])->name('marketing-campaigns.store');
+        Route::put('marketing-campaigns/{marketingCampaign}', [MarketingCampaignController::class, 'update'])->name('marketing-campaigns.update');
+        Route::delete('marketing-campaigns/{marketingCampaign}', [MarketingCampaignController::class, 'destroy'])->name('marketing-campaigns.destroy');
+    });
+
+    Route::middleware('module:flash_sale')->group(function () {
+        Route::get('flash-sales', [FlashSaleController::class, 'index'])->name('flash-sales.index');
+        Route::post('flash-sales', [FlashSaleController::class, 'store'])->name('flash-sales.store');
+        Route::put('flash-sales/{flashSale}', [FlashSaleController::class, 'update'])->name('flash-sales.update');
+        Route::delete('flash-sales/{flashSale}', [FlashSaleController::class, 'destroy'])->name('flash-sales.destroy');
+    });
+
+    Route::middleware('module:reviews')->group(function () {
+        Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+        Route::patch('reviews/{review}/approve', [AdminReviewController::class, 'approve'])->name('reviews.approve');
+        Route::delete('reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+    });
 
     Route::get('cms/banners', [BannerController::class, 'index'])->name('cms.banners');
     Route::post('cms/banners', [BannerController::class, 'store'])->name('cms.banners.store');
@@ -284,6 +350,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::middleware('module:blog')->group(function () {
         Route::get('cms/blog', [BlogController::class, 'index'])->name('cms.blog');
         Route::post('cms/blog', [BlogController::class, 'store'])->name('cms.blog.store');
+        Route::put('cms/blog/{post}', [BlogController::class, 'update'])->name('cms.blog.update');
         Route::delete('cms/blog/{post}', [BlogController::class, 'destroy'])->name('cms.blog.destroy');
     });
 
@@ -334,6 +401,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     });
 
     Route::patch('integrations/{integration}', [IntegrationController::class, 'update'])->name('integrations.update');
+    Route::post('integrations/{integration}/test', [IntegrationController::class, 'test'])->name('integrations.test');
 
     Route::middleware('module:pos')->prefix('pos')->name('pos.')->group(function () {
         Route::get('/', [PosController::class, 'index'])->name('index');

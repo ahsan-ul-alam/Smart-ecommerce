@@ -43,7 +43,12 @@ class ReturnRequestController extends Controller
         $data = $request->validate([
             'status' => ['required', 'in:approved,rejected'],
             'admin_note' => ['nullable', 'string', 'max:1000'],
+            'partial_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
+
+        if (isset($data['partial_amount']) && $data['partial_amount'] > 0) {
+            $returnRequest->update(['partial_amount' => $data['partial_amount']]);
+        }
 
         $this->returns->review(
             $returnRequest,

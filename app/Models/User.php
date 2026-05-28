@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Enums\UserStatus;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -46,6 +47,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'status' => UserStatus::class,
             'is_affiliate' => 'boolean',
         ];
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     public function isAdmin(): bool

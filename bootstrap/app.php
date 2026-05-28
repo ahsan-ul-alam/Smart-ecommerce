@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'shop/payments/bkash/callback',
             'shop/payments/stripe/*',
             'shop/payments/paypal/*',
+            'webhooks/courier/*',
         ]);
 
         $middleware->web(append: [
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
+            'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
             'module' => CheckModuleEnabled::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,

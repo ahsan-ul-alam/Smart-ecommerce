@@ -42,6 +42,10 @@ class OrderController extends Controller
                 'value' => $s->value,
                 'label' => $s->label(),
             ])->values()->all(),
+            'couriers' => collect(config('arcommerze.couriers', []))->map(fn ($label, $key) => [
+                'value' => $key,
+                'label' => $label,
+            ])->values(),
         ]);
     }
 
@@ -107,6 +111,25 @@ class OrderController extends Controller
         return back()->with('success', 'Note saved.');
     }
 
+    public function partialRefund(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $this->orderService->recordPartialRefund($order, (float) $data['amount'], $data['note'] ?? null, $request->user()->id);
+
+        return back()->with('success', 'Refund recorded.');
+    }
+
+    public function retryPayment(Request $request, Order $order): RedirectResponse
+    {
+        \App\Jobs\RetryFailedPayment::dispatch($order->id);
+
+        return back()->with('success', 'Payment retry queued.');
+    }
+
     public function export(Request $request): StreamedResponse
     {
         $filename = 'orders-'.now()->format('Y-m-d-His').'.csv';
@@ -167,7 +190,7 @@ class OrderController extends Controller
     protected function filteredOrdersQuery(Request $request)
     {
         return Order::query()
-            ->with('user:id,name,email')
+            ->with(['user:id,name,email', 'shipment'])
             ->withCount('items')
             ->when($request->search, function ($q, $search) {
                 $q->where(function ($query) use ($search) {

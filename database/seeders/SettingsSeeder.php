@@ -25,6 +25,7 @@ class SettingsSeeder extends Seeder
             \App\Models\Setting::query()->where('group', 'general')->where('key', $key)->update(['is_public' => true]);
         }
         $settings->set('general', 'maintenance_mode', false, 'boolean');
+        $settings->set('general', 'maintenance_message', '', 'string');
 
         $settings->setMany('commerce', [
             'shipping_charge' => ['value' => 80, 'type' => 'integer'],
@@ -54,6 +55,7 @@ class SettingsSeeder extends Seeder
             'abandoned_cart_email' => ['value' => true, 'type' => 'boolean'],
             'abandoned_cart_sms' => ['value' => false, 'type' => 'boolean'],
             'low_stock_alert' => ['value' => true, 'type' => 'boolean'],
+            'abandoned_cart_recovery_coupon' => ['value' => '', 'type' => 'string'],
         ]);
     }
 }

@@ -18,7 +18,7 @@ class ProcessLowStockAlerts implements ShouldQueue
 
     public function handle(NotificationService $notifications, SettingService $settings): void
     {
-        if (! $settings->get('notifications', 'low_stock_alert', true)) {
+        if (! $settings->getBoolean('notifications', 'low_stock_alert', true)) {
             return;
         }
 

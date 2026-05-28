@@ -36,6 +36,31 @@ class BlogController extends Controller
         return back()->with('success', 'Post created.');
     }
 
+    public function update(Request $request, BlogPost $post): RedirectResponse
+    {
+        $data = $request->validate([
+            'title' => ['required', 'string'],
+            'slug' => ['nullable', 'string'],
+            'excerpt' => ['nullable', 'string'],
+            'content' => ['nullable', 'string'],
+            'is_published' => ['boolean'],
+        ]);
+
+        $wasPublished = $post->is_published;
+        $data['slug'] = Str::slug($data['slug'] ?? $data['title']);
+        $data['is_published'] = $data['is_published'] ?? false;
+
+        if ($data['is_published'] && ! $wasPublished) {
+            $data['published_at'] = now();
+        } elseif (! $data['is_published']) {
+            $data['published_at'] = null;
+        }
+
+        $post->update($data);
+
+        return back()->with('success', 'Post updated.');
+    }
+
     public function destroy(BlogPost $post): RedirectResponse
     {
         $post->delete();

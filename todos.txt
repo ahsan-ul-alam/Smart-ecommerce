@@ -1,0 +1,6 @@
+# ArCommerze — work tracker
+# Remove a line when completed.
+
+## Backlog
+
+[infra] Laravel Horizon on Linux/WSL production (pcntl required; use queue:work on Windows)

@@ -17,7 +17,7 @@ class Order extends Model
         'subtotal', 'discount_amount', 'loyalty_points_used', 'loyalty_discount',
         'loyalty_points_earned', 'wallet_amount_used', 'shipping_amount', 'tax_amount', 'total',
         'coupon_id', 'coupon_code', 'payment_reference', 'shipping_address', 'billing_address',
-        'customer_note', 'admin_note', 'paid_at', 'delivered_at',
+        'customer_note', 'admin_note', 'paid_at', 'delivered_at', 'refunded_amount',
     ];
 
     protected function casts(): array
@@ -33,6 +33,7 @@ class Order extends Model
             'shipping_amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'total' => 'decimal:2',
+            'refunded_amount' => 'decimal:2',
             'shipping_address' => 'array',
             'billing_address' => 'array',
             'paid_at' => 'datetime',

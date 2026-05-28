@@ -22,13 +22,19 @@ class AbandonedCartController extends Controller
 
         return Inertia::render('Admin/AbandonedCarts/Index', [
             'carts' => $this->abandonedCarts->list($hours),
+            'stats' => $this->abandonedCarts->stats($hours),
             'filters' => ['hours' => $hours],
+            'coupon_module_enabled' => app(\App\Services\Modules\ModuleService::class)->isEnabled('coupon'),
         ]);
     }
 
-    public function remind(Cart $cart): RedirectResponse
+    public function remind(Request $request, Cart $cart): RedirectResponse
     {
-        $this->abandonedCarts->sendReminder($cart);
+        $request->validate([
+            'recovery_coupon' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $this->abandonedCarts->sendReminder($cart, $request->input('recovery_coupon'));
 
         return back()->with('success', 'Recovery reminder sent.');
     }

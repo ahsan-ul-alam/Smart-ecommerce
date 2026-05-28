@@ -5,7 +5,13 @@
         "orders": "অর্ডার",
         "customers": "গ্রাহক",
         "settings": "সেটিংস",
-        "logout": "লগআউট"
+        "logout": "লগ আউট",
+        "shop": "শপ",
+        "cart": "কার্ট",
+        "account": "অ্যাকাউন্ট",
+        "team": "টিম",
+        "reports": "রিপোর্ট",
+        "special_product": "বিশেষ পণ্য"
     },
     "auth": {
         "login": "সাইন ইন",
@@ -13,8 +19,21 @@
         "email": "ইমেইল",
         "password": "পাসওয়ার্ড",
         "remember": "মনে রাখুন",
+        "forgot_password": "পাসওয়ার্ড ভুলে গেছেন?",
         "no_account": "অ্যাকাউন্ট নেই?",
-        "has_account": "ইতিমধ্যে অ্যাকাউন্ট আছে?"
+        "has_account": "ইতিমধ্যে অ্যাকাউন্ট আছে?",
+        "verify_email": "ইমেইল যাচাই করুন"
+    },
+    "shop": {
+        "search_placeholder": "পণ্য, ব্র্যান্ড খুঁজুন…",
+        "add_to_cart": "কার্টে যোগ করুন",
+        "checkout": "চেকআউট",
+        "cart_empty": "আপনার কার্ট খালি",
+        "featured": "ফিচার্ড",
+        "flash_sale": "ফ্ল্যাশ সেল",
+        "contact": "যোগাযোগ",
+        "faq": "প্রশ্নোত্তর",
+        "blog": "ব্লগ"
     },
     "dashboard": {
         "title": "ড্যাশবোর্ড",
@@ -24,15 +43,26 @@
         "customers": "গ্রাহক",
         "products": "পণ্য"
     },
+    "orders": {
+        "ship_courier": "কুরিয়ারে পাঠান",
+        "partial_refund": "আংশিক রিফান্ড",
+        "retry_payment": "পেমেন্ট পুনরায় চেষ্টা"
+    },
     "settings": {
         "general": "সাধারণ সেটিংস",
         "modules": "মডিউল",
         "integrations": "ইন্টিগ্রেশন",
-        "save": "সংরক্ষণ"
+        "save": "সংরক্ষণ",
+        "queue_monitor": "কিউ মনিটর"
     },
     "common": {
-        "loading": "লোড হচ্ছে...",
-        "enabled": "সক্রিয়",
-        "disabled": "নিষ্ক্রিয়"
+        "loading": "লোড হচ্ছে…",
+        "enabled": "চালু",
+        "disabled": "বন্ধ",
+        "save": "সংরক্ষণ",
+        "cancel": "বাতিল",
+        "delete": "মুছুন",
+        "edit": "সম্পাদনা",
+        "view": "দেখুন"
     }
 }
