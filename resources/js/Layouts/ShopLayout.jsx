@@ -24,6 +24,7 @@ export default function ShopLayout({ children }) {
                         <Link href="/shop/products" className="hover:text-teal-700">Shop</Link>
                         <Link href="/shop/products?featured=1" className="hover:text-teal-700">Featured</Link>
                         <Link href="/shop/flash-sales" className="hover:text-teal-700 text-amber-700 dark:text-amber-400 font-semibold">Flash Sale</Link>
+                        <Link href="/shop/faq" className="hover:text-teal-700">FAQ</Link>
                         {modules.includes('blog') && (
                             <Link href="/shop/blog" className="hover:text-teal-700">Blog</Link>
                         )}
