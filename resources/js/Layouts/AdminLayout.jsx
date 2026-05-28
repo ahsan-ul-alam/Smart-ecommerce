@@ -47,8 +47,11 @@ const vendorLink = { href: '/admin/vendors', label: 'Vendors', module: 'vendor' 
 const settingsLinks = [
     { href: '/admin/settings/general', label: 'Site' },
     { href: '/admin/settings/notifications', label: 'Notifications' },
-    { href: '/admin/notification-logs', label: 'Message Logs' },
-    { href: '/admin/audit-logs', label: 'Audit Logs' },
+    { href: '/admin/notification-logs', label: 'Message Logs', permission: 'notifications.manage' },
+    { href: '/admin/audit-logs', label: 'Audit Logs', permission: 'settings.manage' },
+    { href: '/admin/activity-logs', label: 'Activity Logs', permission: 'settings.manage' },
+    { href: '/admin/settings/system', label: 'System Tools', permission: 'settings.manage' },
+    { href: '/admin/roles', label: 'Roles', permission: 'roles.manage' },
     { href: '/admin/settings/commerce', label: 'Commerce' },
     { href: '/admin/shipping-zones', label: 'Shipping Zones' },
     { href: '/admin/settings/modules', label: 'settings.modules' },
@@ -165,9 +168,13 @@ export default function AdminLayout({ children, title }) {
                         ))}
                     </div>
                 )}
-                {url.startsWith('/admin/settings') && can('settings.manage') && (
+                {(url.startsWith('/admin/settings')
+                    || url.startsWith('/admin/audit-logs')
+                    || url.startsWith('/admin/activity-logs')
+                    || url.startsWith('/admin/roles')
+                    || url.startsWith('/admin/notification-logs')) && (
                     <div className="px-6 pt-4 flex gap-2 flex-wrap border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                        {settingsLinks.map((link) => (
+                        {settingsLinks.filter((link) => !link.permission || can(link.permission)).map((link) => (
                             <Link
                                 key={link.href}
                                 href={link.href}

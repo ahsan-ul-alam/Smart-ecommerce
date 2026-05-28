@@ -23,7 +23,10 @@ use App\Http\Controllers\Admin\HomepageSectionController;
 use App\Http\Controllers\Admin\VendorController;
 use App\Http\Controllers\Admin\VendorCommissionController;
 use App\Http\Controllers\Admin\AbandonedCartController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Admin\NotificationLogController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -198,8 +201,15 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('orders/{order}/shipment', [ShipmentController::class, 'store'])->name('orders.shipment');
 
     Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
+    Route::get('products/import/template', [ProductController::class, 'importTemplate'])->name('products.import.template');
     Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import');
     Route::post('products/import', [ProductController::class, 'import'])->name('products.import.store');
+
+    Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+
+    Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::resource('products', ProductController::class)->except(['show']);
     Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])->name('products.duplicate');
     Route::post('products/{product}/images', [ProductImageController::class, 'store'])->name('products.images.store');
@@ -284,6 +294,8 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
         Route::put('/commerce', [SettingsController::class, 'updateCommerce'])->name('commerce.update');
         Route::get('/modules', [SettingsController::class, 'modules'])->name('modules');
         Route::patch('/modules/{key}', [SettingsController::class, 'toggleModule'])->name('modules.toggle');
+        Route::get('/system', [SystemController::class, 'index'])->name('system');
+        Route::post('/system/clear', [SystemController::class, 'clear'])->name('system.clear');
         Route::get('/integrations/{type}', [SettingsController::class, 'integrations'])->name('integrations');
     });
 

@@ -1,5 +1,5 @@
 import { useForm, Link } from '@inertiajs/react';
-import { Upload, ArrowLeft } from 'lucide-react';
+import { Upload, ArrowLeft, Download } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
 import FlashMessage from '../../../Components/UI/FlashMessage';
@@ -36,9 +36,17 @@ export default function ProductImport({ sampleHeaders }) {
                             {errors.file && <p className="text-xs text-red-600 mt-1">{errors.file}</p>}
                         </div>
 
-                        <Button type="submit" loading={processing}>
-                            <Upload size={16} /> Import CSV
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                            <Button type="submit" loading={processing}>
+                                <Upload size={16} /> Import CSV
+                            </Button>
+                            <a
+                                href="/admin/products/import/template"
+                                className="inline-flex items-center gap-1 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+                            >
+                                <Download size={16} /> Download template
+                            </a>
+                        </div>
                     </form>
 
                     <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">

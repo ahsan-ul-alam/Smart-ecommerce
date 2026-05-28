@@ -18,6 +18,27 @@ class ProductImportExportService
         protected ProductService $productService,
     ) {}
 
+    public function sampleImportRow(): array
+    {
+        return [
+            'Sample Product',
+            'SKU-001',
+            '',
+            'Electronics',
+            'Generic',
+            '999.00',
+            '1299.00',
+            '700.00',
+            '50',
+            '5',
+            'published',
+            'physical',
+            '0',
+            '1',
+            'Short description for import template',
+        ];
+    }
+
     public function exportHeaders(): array
     {
         return [

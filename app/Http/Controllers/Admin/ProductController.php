@@ -84,6 +84,21 @@ class ProductController extends Controller
         ]);
     }
 
+    public function importTemplate(): StreamedResponse
+    {
+        $headers = $this->importExport->exportHeaders();
+        $sample = $this->importExport->sampleImportRow();
+
+        return response()->streamDownload(function () use ($headers, $sample) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, $headers);
+            fputcsv($out, $sample);
+            fclose($out);
+        }, 'product-import-template.csv', [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
     public function import(Request $request): RedirectResponse
     {
         $request->validate([
