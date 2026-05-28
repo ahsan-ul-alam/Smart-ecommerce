@@ -44,7 +44,9 @@ export default function ShippingZonesIndex({ zones }) {
     return (
         <AdminLayout title="Shipping Zones">
             <FlashMessage />
-            <p className="text-sm text-slate-500 mb-4">Set shipping fees by district. Checkout uses the matching zone; unmatched districts use Commerce default rates.</p>
+            <p className="text-sm text-slate-500 mb-4">
+                Set shipping fees by district name (must match checkout districts, e.g. Dhaka, Chattogram, Comilla). Unmatched districts use Commerce default rates.
+            </p>
 
             <div className="flex justify-end mb-4">
                 <Button onClick={openCreate}><Plus size={16} /> Add zone</Button>

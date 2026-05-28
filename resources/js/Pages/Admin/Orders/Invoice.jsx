@@ -3,6 +3,8 @@ import { Link } from '@inertiajs/react';
 import { Printer, ArrowLeft } from 'lucide-react';
 import Button from '../../../Components/UI/Button';
 
+import { formatShippingAddress } from '../../../utils/formatShippingAddress';
+
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
 const formatDate = (d) => new Date(d).toLocaleString('en-BD');
 
@@ -93,8 +95,9 @@ export default function OrderInvoice({ order, store, backUrl }) {
                     <div className="mt-8 text-sm border-t pt-4">
                         <p className="text-xs uppercase text-slate-400 mb-1">Ship to</p>
                         <p className="font-medium">{order.shipping_address.name}</p>
-                        <p>{order.shipping_address.address_line_1}</p>
-                        <p>{order.shipping_address.city}, {order.shipping_address.district}</p>
+                        {formatShippingAddress(order.shipping_address).lines.map((line, i) => (
+                            <p key={i}>{line}</p>
+                        ))}
                         <p>{order.shipping_address.phone}</p>
                     </div>
                 )}

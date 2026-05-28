@@ -2,6 +2,7 @@ import { useForm } from '@inertiajs/react';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
+import { formatShippingAddress } from '../../../utils/formatShippingAddress';
 import Button from '../../../Components/UI/Button';
 import Select from '../../../Components/UI/Select';
 import Textarea from '../../../Components/UI/Textarea';
@@ -75,9 +76,9 @@ export default function OrderShow({ order, statuses, paymentStatuses, couriers =
                         <CardBody className="text-sm text-slate-600 dark:text-slate-300 space-y-1">
                             <p className="font-medium text-slate-800 dark:text-white">{order.shipping_address?.name}</p>
                             <p>{order.shipping_address?.phone}</p>
-                            <p>{order.shipping_address?.address_line_1}</p>
-                            {order.shipping_address?.address_line_2 && <p>{order.shipping_address.address_line_2}</p>}
-                            <p>{order.shipping_address?.city}, {order.shipping_address?.district}</p>
+                            {formatShippingAddress(order.shipping_address).lines.map((line, i) => (
+                                <p key={i}>{line}</p>
+                            ))}
                             {order.customer_note && <p className="mt-2 text-slate-500">Note: {order.customer_note}</p>}
                         </CardBody>
                     </Card>

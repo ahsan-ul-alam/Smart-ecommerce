@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import { Printer, ArrowLeft, Package } from 'lucide-react';
 import Button from '../../../Components/UI/Button';
+import { formatShippingAddress } from '../../../utils/formatShippingAddress';
 
 export default function PackingSlip({ order, store }) {
     useEffect(() => {
@@ -43,9 +44,9 @@ export default function PackingSlip({ order, store }) {
                         <p className="text-xs uppercase text-slate-400 mb-2 font-semibold">Ship to</p>
                         <p className="font-bold text-base">{order.shipping_address?.name}</p>
                         <p>{order.shipping_address?.phone}</p>
-                        <p className="mt-1">{order.shipping_address?.address_line_1}</p>
-                        {order.shipping_address?.address_line_2 && <p>{order.shipping_address.address_line_2}</p>}
-                        <p className="font-medium">{order.shipping_address?.city}, {order.shipping_address?.district}</p>
+                        {formatShippingAddress(order.shipping_address).lines.map((line, i) => (
+                            <p key={i} className={i === 0 ? 'mt-1' : ''}>{line}</p>
+                        ))}
                     </div>
                     <div className="border border-slate-200 p-4 rounded">
                         <p className="text-xs uppercase text-slate-400 mb-2 font-semibold">Order info</p>

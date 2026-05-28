@@ -9,6 +9,7 @@ use App\Services\Commerce\OrderService;
 use App\Services\Commerce\PaymentService;
 use App\Services\Customer\LoyaltyService;
 use App\Services\Customer\WalletService;
+use App\Services\Geo\BangladeshLocationService;
 use App\Services\Modules\ModuleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class CheckoutController extends Controller
         protected LoyaltyService $loyalty,
         protected WalletService $wallet,
         protected ModuleService $modules,
+        protected BangladeshLocationService $locations,
     ) {}
 
     public function index(Request $request): Response|RedirectResponse
@@ -38,26 +40,10 @@ class CheckoutController extends Controller
 
         $rewards = $this->rewardsContext($request, $cart);
 
-        $districts = \App\Models\ShippingZone::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get()
-            ->flatMap(fn ($z) => $z->districts ?? [])
-            ->unique()
-            ->sort()
-            ->values()
-            ->map(fn ($d) => ['value' => $d, 'label' => $d])
-            ->all();
-
-        if (empty($districts)) {
-            $districts = collect(['Dhaka', 'Chittagong', 'Rajshahi', 'Khulna', 'Barisal', 'Sylhet'])
-                ->map(fn ($d) => ['value' => $d, 'label' => $d])->all();
-        }
-
         return Inertia::render('Shop/Checkout', [
             'cart' => $formatted,
             'rewards' => $rewards,
-            'districts' => $districts,
+            'divisions' => $this->locations->divisions(),
             'paymentMethods' => $this->paymentService->enabledPaymentMethods(),
             'user' => $request->user() ? [
                 'name' => $request->user()->name,
@@ -66,6 +52,7 @@ class CheckoutController extends Controller
             ] : null,
             'addresses' => $request->user()
                 ? $request->user()->addresses()->orderByDesc('is_default')->get()
+                    ->map(fn ($addr) => $this->mapAddressForForm($addr))
                 : [],
         ]);
     }
@@ -73,12 +60,13 @@ class CheckoutController extends Controller
     public function shippingPreview(Request $request): \Illuminate\Http\JsonResponse
     {
         $data = $request->validate(['district' => ['required', 'string', 'max:100']]);
+        $district = $this->locations->normalizeDistrictForShipping($data['district']);
         $cart = $this->cartService->resolve($request)->load(['items.product', 'coupon']);
 
         $user = $request->user();
         $totals = $user
-            ? $this->cartService->calculateTotalsWithRewards($cart, $user, 0, 0, $data['district'])
-            : $this->cartService->calculateTotals($cart, $data['district']);
+            ? $this->cartService->calculateTotalsWithRewards($cart, $user, 0, 0, $district)
+            : $this->cartService->calculateTotals($cart, $district);
 
         return response()->json([
             'shipping' => $totals['shipping'],
@@ -94,17 +82,9 @@ class CheckoutController extends Controller
     {
         $cart = $this->cartService->resolve($request);
 
-        $shippingAddress = [
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'email' => $request->email,
-            'address_line_1' => $request->address_line_1,
-            'address_line_2' => $request->address_line_2,
-            'city' => $request->city,
-            'district' => $request->district,
-            'postal_code' => $request->postal_code,
-            'country' => 'Bangladesh',
-        ];
+        $shippingAddress = $this->locations->toShippingPayload($request->only([
+            'name', 'phone', 'email', 'division', 'district', 'thana', 'local_address', 'postal_code',
+        ]));
 
         $isOnline = $this->paymentService->isOnlinePayment($request->payment_method);
 
@@ -161,7 +141,7 @@ class CheckoutController extends Controller
         $loyaltyAccount = $this->loyalty->isEnabled() ? $this->loyalty->account($user) : null;
         $wallet = $this->wallet->isEnabled() ? $this->wallet->wallet($user) : null;
         $baseTotals = $this->cartService->calculateTotals($cart);
-        $afterCoupon = max(0, $baseTotals['subtotal'] - $baseTotals['discount'] + $baseTotals['shipping']);
+        $afterCoupon = max(0, $baseTotals['subtotal'] - $baseTotals['discount'] + $baseTotals['shipping'] + $baseTotals['tax']);
 
         return [
             'loyalty_enabled' => $this->loyalty->isEnabled(),
@@ -201,7 +181,7 @@ class CheckoutController extends Controller
         $loyaltyAccount = $this->loyalty->account($user);
         $wallet = $this->wallet->wallet($user);
         $baseTotals = $this->cartService->calculateTotals($cart);
-        $afterCoupon = max(0, $baseTotals['subtotal'] - $baseTotals['discount'] + $baseTotals['shipping']);
+        $afterCoupon = max(0, $baseTotals['subtotal'] - $baseTotals['discount'] + $baseTotals['shipping'] + $baseTotals['tax']);
 
         $loyaltyPoints = $request->boolean('use_max_loyalty')
             ? $loyaltyAccount->points
@@ -217,5 +197,26 @@ class CheckoutController extends Controller
         $walletAmount = $this->wallet->previewUsage($user, $walletAmount, $afterLoyalty);
 
         return [$preview['points'], $walletAmount];
+    }
+
+    protected function mapAddressForForm($addr): array
+    {
+        $division = $addr->division ?: $this->locations->findDivisionForDistrict($addr->district);
+        $thana = $addr->thana ?: $addr->city;
+        $local = $addr->local_address ?: $addr->address_line_1;
+
+        return [
+            'id' => $addr->id,
+            'label' => $addr->label,
+            'name' => $addr->name,
+            'phone' => $addr->phone,
+            'email' => $addr->email,
+            'division' => $division,
+            'district' => $addr->district,
+            'thana' => $thana,
+            'local_address' => $local,
+            'postal_code' => $addr->postal_code,
+            'is_default' => $addr->is_default,
+        ];
     }
 }

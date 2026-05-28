@@ -1,6 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Printer } from 'lucide-react';
 import AccountLayout from '../../../Layouts/AccountLayout';
+import { formatShippingAddress } from '../../../utils/formatShippingAddress';
 import Badge from '../../../Components/UI/Badge';
 import Button from '../../../Components/UI/Button';
 import Select from '../../../Components/UI/Select';
@@ -48,8 +49,9 @@ export default function OrderShow({ order, returnReasons = {} }) {
                         <CardBody className="text-sm text-slate-600 space-y-1">
                             <p className="font-medium text-slate-800 dark:text-white">{order.shipping_address?.name}</p>
                             <p>{order.shipping_address?.phone}</p>
-                            <p>{order.shipping_address?.address_line_1}</p>
-                            <p>{order.shipping_address?.city}, {order.shipping_address?.district}</p>
+                            {formatShippingAddress(order.shipping_address).lines.map((line, i) => (
+                                <p key={i}>{line}</p>
+                            ))}
                         </CardBody>
                     </Card>
 

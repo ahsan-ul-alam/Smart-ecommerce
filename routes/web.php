@@ -50,6 +50,7 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\ContactInquiryController;
 use App\Http\Controllers\Shop\ContactController as ShopContactController;
+use App\Http\Controllers\Shop\LocationController;
 use App\Models\Banner;
 use App\Models\HomepageSection;
 use App\Models\Product;
@@ -108,6 +109,10 @@ Route::prefix('shop')->name('shop.')->group(function () {
 
     Route::get('/contact', [ShopContactController::class, 'index'])->name('contact');
     Route::post('/contact', [ShopContactController::class, 'store'])->name('contact.store');
+
+    Route::get('/locations/divisions', [LocationController::class, 'divisions'])->name('locations.divisions');
+    Route::get('/locations/districts', [LocationController::class, 'districts'])->name('locations.districts');
+    Route::get('/locations/thanas', [LocationController::class, 'thanas'])->name('locations.thanas');
 
     Route::get('/faq', [\App\Http\Controllers\Shop\FaqController::class, 'index'])->name('faq');
     Route::get('/flash-sales', [ShopFlashSaleController::class, 'index'])->name('flash-sales.index');

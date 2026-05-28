@@ -2,6 +2,7 @@ import { Link, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
+import { formatShippingAddress } from '../../../utils/formatShippingAddress';
 import Button from '../../../Components/UI/Button';
 import Select from '../../../Components/UI/Select';
 import Textarea from '../../../Components/UI/Textarea';
@@ -83,7 +84,7 @@ export default function CustomerShow({ customer, orders, statuses, addresses }) 
                                     <div key={a.id} className="text-sm border-b last:border-0 pb-3 last:pb-0">
                                         <p className="font-medium">{a.name} {a.is_default && <Badge variant="info">Default</Badge>}</p>
                                         <p className="text-slate-500">{a.phone}</p>
-                                        <p className="text-slate-600 dark:text-slate-300">{a.address_line_1}, {a.city}, {a.district}</p>
+                                        <p className="text-slate-600 dark:text-slate-300">{formatShippingAddress(a).single}</p>
                                     </div>
                                 ))}
                             </CardBody>

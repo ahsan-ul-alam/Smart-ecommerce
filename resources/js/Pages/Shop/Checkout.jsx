@@ -4,23 +4,32 @@ import axios from 'axios';
 import ShopLayout from '../../Layouts/ShopLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
-import Select from '../../Components/UI/Select';
 import Textarea from '../../Components/UI/Textarea';
+import BangladeshAddressFields from '../../Components/Address/BangladeshAddressFields';
 import { Card, CardBody, CardHeader } from '../../Components/UI/Card';
 
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
 
-export default function Checkout({ cart, paymentMethods, user, addresses = [], rewards = {}, districts = [] }) {
+const emptyAddress = {
+    division: '',
+    district: '',
+    thana: '',
+    local_address: '',
+    postal_code: '',
+};
+
+export default function Checkout({ cart, paymentMethods, user, addresses = [], rewards = {}, divisions = [] }) {
     const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
 
     const { data, setData, post, processing, errors } = useForm({
         name: defaultAddr?.name || user?.name || '',
         phone: defaultAddr?.phone || user?.phone || '',
         email: defaultAddr?.email || user?.email || '',
-        address_line_1: defaultAddr?.address_line_1 || '',
-        address_line_2: defaultAddr?.address_line_2 || '',
-        city: defaultAddr?.city || '',
-        district: defaultAddr?.district || 'Dhaka',
+        ...emptyAddress,
+        division: defaultAddr?.division || '',
+        district: defaultAddr?.district || '',
+        thana: defaultAddr?.thana || '',
+        local_address: defaultAddr?.local_address || '',
         postal_code: defaultAddr?.postal_code || '',
         customer_note: '',
         payment_method: 'cod',
@@ -36,10 +45,10 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
             name: addr.name,
             phone: addr.phone,
             email: addr.email || data.email,
-            address_line_1: addr.address_line_1,
-            address_line_2: addr.address_line_2 || '',
-            city: addr.city,
-            district: addr.district,
+            division: addr.division || '',
+            district: addr.district || '',
+            thana: addr.thana || '',
+            local_address: addr.local_address || '',
             postal_code: addr.postal_code || '',
         });
     };
@@ -82,7 +91,7 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
                 <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-6">
                         <Card>
-                            <CardHeader title="Shipping Information" />
+                            <CardHeader title="Shipping Information" subtitle="Select division, district, and thana, then enter your local address" />
                             <CardBody className="space-y-4">
                                 {addresses.length > 0 && (
                                     <div className="flex flex-wrap gap-2 pb-2 border-b border-slate-100 dark:border-slate-700">
@@ -93,7 +102,7 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
                                                 onClick={() => fillAddress(addr)}
                                                 className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-600 hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20"
                                             >
-                                                {addr.label} — {addr.city}
+                                                {addr.label} — {addr.district}
                                             </button>
                                         ))}
                                     </div>
@@ -103,13 +112,15 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
                                     <Input label="Phone" value={data.phone} onChange={(e) => setData('phone', e.target.value)} error={errors.phone} required />
                                 </div>
                                 <Input label="Email (optional)" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} error={errors.email} />
-                                <Input label="Address Line 1" value={data.address_line_1} onChange={(e) => setData('address_line_1', e.target.value)} error={errors.address_line_1} required />
-                                <Input label="Address Line 2" value={data.address_line_2} onChange={(e) => setData('address_line_2', e.target.value)} />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input label="City / Area" value={data.city} onChange={(e) => setData('city', e.target.value)} error={errors.city} required />
-                                    <Select label="District" value={data.district} onChange={(e) => setData('district', e.target.value)} options={districts} error={errors.district} />
-                                </div>
-                                <Input label="Postal Code" value={data.postal_code} onChange={(e) => setData('postal_code', e.target.value)} />
+
+                                <BangladeshAddressFields
+                                    data={data}
+                                    setData={setData}
+                                    errors={errors}
+                                    divisions={divisions}
+                                />
+
+                                <Input label="Postal Code (optional)" value={data.postal_code} onChange={(e) => setData('postal_code', e.target.value)} />
                                 <Textarea label="Order Note" value={data.customer_note} onChange={(e) => setData('customer_note', e.target.value)} rows={2} />
                             </CardBody>
                         </Card>

@@ -4,23 +4,35 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import AccountLayout from '../../../Layouts/AccountLayout';
 import Button from '../../../Components/UI/Button';
 import Input from '../../../Components/UI/Input';
-import Select from '../../../Components/UI/Select';
 import Badge from '../../../Components/UI/Badge';
 import FlashMessage from '../../../Components/UI/FlashMessage';
+import BangladeshAddressFields from '../../../Components/Address/BangladeshAddressFields';
+import { formatShippingAddress } from '../../../utils/formatShippingAddress';
 import { Card, CardBody, CardHeader } from '../../../Components/UI/Card';
 
-const districts = [
-    'Dhaka', 'Chittagong', 'Rajshahi', 'Khulna', 'Barisal', 'Sylhet', 'Rangpur', 'Mymensingh',
-    'Gazipur', 'Narayanganj',
-].map((d) => ({ value: d, label: d }));
+const empty = {
+    label: 'Home',
+    name: '',
+    phone: '',
+    email: '',
+    division: '',
+    district: '',
+    thana: '',
+    local_address: '',
+    postal_code: '',
+    is_default: false,
+};
 
-const empty = { label: 'Home', name: '', phone: '', email: '', address_line_1: '', address_line_2: '', city: '', district: 'Dhaka', postal_code: '', is_default: false };
-
-export default function AddressesIndex({ addresses }) {
+export default function AddressesIndex({ addresses, divisions }) {
     const [editing, setEditing] = useState(null);
     const form = useForm(empty);
 
-    const openCreate = () => { setEditing('new'); form.reset(); form.setData(empty); };
+    const openCreate = () => {
+        setEditing('new');
+        form.reset();
+        form.setData(empty);
+    };
+
     const openEdit = (addr) => {
         setEditing(addr.id);
         form.setData({ ...addr, is_default: !!addr.is_default });
@@ -56,9 +68,15 @@ export default function AddressesIndex({ addresses }) {
                                 <Input label="Full Name" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required />
                                 <Input label="Phone" value={form.data.phone} onChange={(e) => form.setData('phone', e.target.value)} required />
                                 <Input label="Email" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />
-                                <Input label="Address" className="sm:col-span-2" value={form.data.address_line_1} onChange={(e) => form.setData('address_line_1', e.target.value)} required />
-                                <Input label="City" value={form.data.city} onChange={(e) => form.setData('city', e.target.value)} required />
-                                <Select label="District" value={form.data.district} onChange={(e) => form.setData('district', e.target.value)} options={districts} />
+                                <div className="sm:col-span-2">
+                                    <BangladeshAddressFields
+                                        data={form.data}
+                                        setData={form.setData}
+                                        errors={form.errors}
+                                        divisions={divisions}
+                                    />
+                                </div>
+                                <Input label="Postal Code" value={form.data.postal_code} onChange={(e) => form.setData('postal_code', e.target.value)} />
                                 <label className="sm:col-span-2 flex items-center gap-2 text-sm">
                                     <input type="checkbox" checked={form.data.is_default} onChange={(e) => form.setData('is_default', e.target.checked)} className="rounded" />
                                     Default address
@@ -72,27 +90,31 @@ export default function AddressesIndex({ addresses }) {
                     </Card>
                 )}
 
-                {addresses.map((addr) => (
-                    <Card key={addr.id}>
-                        <CardBody>
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-semibold">{addr.label}</span>
-                                        {addr.is_default && <Badge variant="success">Default</Badge>}
+                {addresses.map((addr) => {
+                    const { lines } = formatShippingAddress(addr);
+                    return (
+                        <Card key={addr.id}>
+                            <CardBody>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="font-semibold">{addr.label}</span>
+                                            {addr.is_default && <Badge variant="success">Default</Badge>}
+                                        </div>
+                                        <p className="text-sm text-slate-600">{addr.name} · {addr.phone}</p>
+                                        {lines.map((line, i) => (
+                                            <p key={i} className="text-sm text-slate-500 mt-0.5">{line}</p>
+                                        ))}
                                     </div>
-                                    <p className="text-sm text-slate-600">{addr.name} · {addr.phone}</p>
-                                    <p className="text-sm text-slate-500 mt-1">{addr.address_line_1}</p>
-                                    <p className="text-sm text-slate-500">{addr.city}, {addr.district}</p>
+                                    <div className="flex gap-1">
+                                        <button type="button" onClick={() => openEdit(addr)} className="p-2 hover:bg-slate-100 rounded-lg"><Pencil size={16} /></button>
+                                        <button type="button" onClick={() => destroy(addr.id)} className="p-2 hover:bg-red-50 text-red-600 rounded-lg"><Trash2 size={16} /></button>
+                                    </div>
                                 </div>
-                                <div className="flex gap-1">
-                                    <button type="button" onClick={() => openEdit(addr)} className="p-2 hover:bg-slate-100 rounded-lg"><Pencil size={16} /></button>
-                                    <button type="button" onClick={() => destroy(addr.id)} className="p-2 hover:bg-red-50 text-red-600 rounded-lg"><Trash2 size={16} /></button>
-                                </div>
-                            </div>
-                        </CardBody>
-                    </Card>
-                ))}
+                            </CardBody>
+                        </Card>
+                    );
+                })}
                 {!addresses.length && !editing && (
                     <p className="text-slate-400 col-span-2 text-center py-8">No saved addresses yet.</p>
                 )}
