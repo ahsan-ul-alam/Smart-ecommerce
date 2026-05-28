@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useForm } from '@inertiajs/react';
+import axios from 'axios';
 import ShopLayout from '../../Layouts/ShopLayout';
 import Button from '../../Components/UI/Button';
 import Input from '../../Components/UI/Input';
@@ -8,12 +10,7 @@ import { Card, CardBody, CardHeader } from '../../Components/UI/Card';
 
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
 
-const districts = [
-    'Dhaka', 'Chittagong', 'Rajshahi', 'Khulna', 'Barisal', 'Sylhet', 'Rangpur', 'Mymensingh',
-    'Gazipur', 'Narayanganj', 'Comilla', 'Bogra', 'Jessore', 'Cox\'s Bazar',
-].map((d) => ({ value: d, label: d }));
-
-export default function Checkout({ cart, paymentMethods, user, addresses = [], rewards = {} }) {
+export default function Checkout({ cart, paymentMethods, user, addresses = [], rewards = {}, districts = [] }) {
     const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
 
     const { data, setData, post, processing, errors } = useForm({
@@ -52,7 +49,28 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
         post('/shop/checkout');
     };
 
-    const { totals, items } = cart;
+    const { items } = cart;
+    const [totals, setTotals] = useState(cart.totals);
+    const [shippingZone, setShippingZone] = useState(cart.totals?.shipping_zone);
+
+    useEffect(() => {
+        setTotals(cart.totals);
+    }, [cart.totals]);
+
+    useEffect(() => {
+        if (!data.district) return;
+
+        axios.post('/shop/checkout/shipping-preview', { district: data.district })
+            .then((res) => {
+                setTotals((prev) => ({
+                    ...prev,
+                    shipping: res.data.shipping,
+                    total: res.data.total,
+                }));
+                setShippingZone(res.data.shipping_zone);
+            })
+            .catch(() => {});
+    }, [data.district]);
 
     return (
         <ShopLayout>
@@ -172,7 +190,10 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
                                 <div className="border-t pt-3 space-y-2">
                                     <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(totals.subtotal)}</span></div>
                                     {totals.discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatPrice(totals.discount)}</span></div>}
-                                    <div className="flex justify-between"><span>Shipping</span><span>{totals.shipping === 0 ? 'Free' : formatPrice(totals.shipping)}</span></div>
+                                    <div className="flex justify-between">
+                                        <span>Shipping{shippingZone?.name ? ` (${shippingZone.name})` : ''}</span>
+                                        <span>{totals.shipping === 0 ? 'Free' : formatPrice(totals.shipping)}</span>
+                                    </div>
                                     <div className="flex justify-between font-bold text-lg"><span>Total</span><span className="text-teal-700">{formatPrice(totals.total)}</span></div>
                                 </div>
                                 <Button type="submit" loading={processing} className="w-full mt-4">

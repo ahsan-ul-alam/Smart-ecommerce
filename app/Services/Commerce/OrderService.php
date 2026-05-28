@@ -62,14 +62,17 @@ class OrderService
             ? User::query()->find($checkoutData['user_id'])
             : null;
 
+        $district = $checkoutData['shipping_address']['district'] ?? null;
+
         $totals = $user
             ? $this->cartService->calculateTotalsWithRewards(
                 $cart,
                 $user,
                 (int) ($checkoutData['loyalty_points'] ?? 0),
                 (float) ($checkoutData['wallet_amount'] ?? 0),
+                $district,
             )
-            : $this->cartService->calculateTotals($cart);
+            : $this->cartService->calculateTotals($cart, $district);
 
         $paymentMethod = PaymentMethod::from($checkoutData['payment_method'] ?? 'cod');
 

@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             CatalogSeeder::class,
             CommerceSeeder::class,
             CmsSeeder::class,
+            ShippingZoneSeeder::class,
+            FaqSeeder::class,
             FlashSaleSeeder::class,
             SampleOrdersSeeder::class,
             LoyaltyWalletSeeder::class,

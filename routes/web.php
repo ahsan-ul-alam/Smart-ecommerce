@@ -91,6 +91,7 @@ Route::prefix('shop')->name('shop.')->group(function () {
     Route::get('/products/{slug}', [ShopProductController::class, 'show'])->name('products.show');
     Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->middleware('auth')->name('products.reviews');
 
+    Route::get('/faq', [\App\Http\Controllers\Shop\FaqController::class, 'index'])->name('faq');
     Route::get('/flash-sales', [ShopFlashSaleController::class, 'index'])->name('flash-sales.index');
     Route::get('/flash-sales/{slug}', [ShopFlashSaleController::class, 'show'])->name('flash-sales.show');
 
@@ -111,6 +112,7 @@ Route::prefix('shop')->name('shop.')->group(function () {
     Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->name('cart.coupon.remove');
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout/shipping-preview', [CheckoutController::class, 'shippingPreview'])->name('checkout.shipping-preview');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/orders/{orderNumber}/confirmation', [CheckoutController::class, 'confirmation'])->name('orders.confirmation');
 
@@ -248,6 +250,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::patch('cms/homepage/reorder', [HomepageSectionController::class, 'reorder'])->name('cms.homepage.reorder');
 
     Route::get('cms/pages', [AdminPageController::class, 'index'])->name('cms.pages');
+    Route::get('cms/faqs', [\App\Http\Controllers\Admin\FaqController::class, 'index'])->name('cms.faqs');
+    Route::post('cms/faqs', [\App\Http\Controllers\Admin\FaqController::class, 'store'])->name('cms.faqs.store');
+    Route::put('cms/faqs/{faq}', [\App\Http\Controllers\Admin\FaqController::class, 'update'])->name('cms.faqs.update');
+    Route::delete('cms/faqs/{faq}', [\App\Http\Controllers\Admin\FaqController::class, 'destroy'])->name('cms.faqs.destroy');
     Route::post('cms/pages', [AdminPageController::class, 'store'])->name('cms.pages.store');
     Route::put('cms/pages/{page}', [AdminPageController::class, 'update'])->name('cms.pages.update');
     Route::delete('cms/pages/{page}', [AdminPageController::class, 'destroy'])->name('cms.pages.destroy');
@@ -256,6 +262,16 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('brands', [BrandController::class, 'store'])->name('brands.store');
     Route::put('brands/{brand}', [BrandController::class, 'update'])->name('brands.update');
     Route::delete('brands/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy');
+
+    Route::get('staff', [\App\Http\Controllers\Admin\StaffController::class, 'index'])->name('staff.index');
+    Route::post('staff', [\App\Http\Controllers\Admin\StaffController::class, 'store'])->name('staff.store');
+    Route::put('staff/{user}', [\App\Http\Controllers\Admin\StaffController::class, 'update'])->name('staff.update');
+    Route::delete('staff/{user}', [\App\Http\Controllers\Admin\StaffController::class, 'destroy'])->name('staff.destroy');
+
+    Route::get('shipping-zones', [\App\Http\Controllers\Admin\ShippingZoneController::class, 'index'])->name('shipping-zones.index');
+    Route::post('shipping-zones', [\App\Http\Controllers\Admin\ShippingZoneController::class, 'store'])->name('shipping-zones.store');
+    Route::put('shipping-zones/{shippingZone}', [\App\Http\Controllers\Admin\ShippingZoneController::class, 'update'])->name('shipping-zones.update');
+    Route::delete('shipping-zones/{shippingZone}', [\App\Http\Controllers\Admin\ShippingZoneController::class, 'destroy'])->name('shipping-zones.destroy');
 
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/general', [SettingsController::class, 'general'])->name('general');

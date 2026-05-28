@@ -38,9 +38,26 @@ class CheckoutController extends Controller
 
         $rewards = $this->rewardsContext($request, $cart);
 
+        $districts = \App\Models\ShippingZone::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get()
+            ->flatMap(fn ($z) => $z->districts ?? [])
+            ->unique()
+            ->sort()
+            ->values()
+            ->map(fn ($d) => ['value' => $d, 'label' => $d])
+            ->all();
+
+        if (empty($districts)) {
+            $districts = collect(['Dhaka', 'Chittagong', 'Rajshahi', 'Khulna', 'Barisal', 'Sylhet'])
+                ->map(fn ($d) => ['value' => $d, 'label' => $d])->all();
+        }
+
         return Inertia::render('Shop/Checkout', [
             'cart' => $formatted,
             'rewards' => $rewards,
+            'districts' => $districts,
             'paymentMethods' => $this->paymentService->enabledPaymentMethods(),
             'user' => $request->user() ? [
                 'name' => $request->user()->name,
@@ -50,6 +67,24 @@ class CheckoutController extends Controller
             'addresses' => $request->user()
                 ? $request->user()->addresses()->orderByDesc('is_default')->get()
                 : [],
+        ]);
+    }
+
+    public function shippingPreview(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate(['district' => ['required', 'string', 'max:100']]);
+        $cart = $this->cartService->resolve($request)->load(['items.product', 'coupon']);
+
+        $user = $request->user();
+        $totals = $user
+            ? $this->cartService->calculateTotalsWithRewards($cart, $user, 0, 0, $data['district'])
+            : $this->cartService->calculateTotals($cart, $data['district']);
+
+        return response()->json([
+            'shipping' => $totals['shipping'],
+            'total' => $totals['total'],
+            'shipping_zone' => $totals['shipping_zone'] ?? null,
+            'free_shipping_min' => $totals['free_shipping_min'] ?? null,
         ]);
     }
 

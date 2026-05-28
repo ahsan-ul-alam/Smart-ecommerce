@@ -21,6 +21,7 @@ class CartService
     public function __construct(
         protected SettingService $settings,
         protected FlashSaleService $flashSales,
+        protected ShippingZoneService $shippingZones,
     ) {}
 
     public function resolve(Request $request): Cart
@@ -116,7 +117,7 @@ class CartService
         return $cart->load(['items.product.images', 'items.variant', 'coupon']);
     }
 
-    public function calculateTotals(Cart $cart): array
+    public function calculateTotals(Cart $cart, ?string $district = null): array
     {
         $cart->loadMissing(['items.product.images', 'items.variant', 'coupon']);
 
@@ -127,17 +128,13 @@ class CartService
             $discount = $cart->coupon->calculateDiscount($subtotal);
         }
 
-        $shipping = (float) $this->settings->get('commerce', 'shipping_charge', 80);
-        $freeShippingMin = (float) $this->settings->get('commerce', 'free_shipping_min', 2000);
+        $shippingResult = $this->shippingZones->calculate(
+            max(0, $subtotal - $discount),
+            $district,
+            $cart->items->isNotEmpty()
+        );
 
-        if ($subtotal >= $freeShippingMin) {
-            $shipping = 0;
-        }
-
-        if ($cart->items->isEmpty()) {
-            $shipping = 0;
-        }
-
+        $shipping = $shippingResult['shipping'];
         $tax = 0;
         $total = max(0, $subtotal - $discount + $shipping + $tax);
 
@@ -147,15 +144,17 @@ class CartService
             'loyalty_discount' => 0,
             'wallet_used' => 0,
             'shipping' => round($shipping, 2),
+            'shipping_zone' => $shippingResult['zone'],
+            'free_shipping_min' => $shippingResult['free_shipping_min'],
             'tax' => round($tax, 2),
             'total' => round($total, 2),
             'item_count' => $cart->items->sum('quantity'),
         ];
     }
 
-    public function calculateTotalsWithRewards(Cart $cart, ?User $user, int $loyaltyPoints = 0, float $walletAmount = 0): array
+    public function calculateTotalsWithRewards(Cart $cart, ?User $user, int $loyaltyPoints = 0, float $walletAmount = 0, ?string $district = null): array
     {
-        $totals = $this->calculateTotals($cart);
+        $totals = $this->calculateTotals($cart, $district);
 
         if (! $user) {
             return $totals;

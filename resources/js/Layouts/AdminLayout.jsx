@@ -23,6 +23,7 @@ const navItems = [
     { href: '/admin/cms/banners', icon: FileText, label: 'CMS', permission: 'cms.manage' },
     { href: '/admin/vendors', icon: Users, label: 'Vendors', permission: 'products.manage', module: 'vendor' },
     { href: '/admin/customers', icon: Users, label: 'nav.customers', permission: 'customers.manage' },
+    { href: '/admin/staff', icon: Users, label: 'Staff', permission: 'users.manage' },
     { href: '/admin/settings/general', icon: Settings, label: 'nav.settings', permission: 'settings.manage' },
 ];
 
@@ -37,6 +38,7 @@ const cmsLinks = [
     { href: '/admin/cms/banners', label: 'Banners' },
     { href: '/admin/cms/homepage', label: 'Homepage' },
     { href: '/admin/cms/pages', label: 'Pages' },
+    { href: '/admin/cms/faqs', label: 'FAQs' },
     { href: '/admin/cms/blog', label: 'Blog', module: 'blog' },
 ];
 
@@ -48,6 +50,7 @@ const settingsLinks = [
     { href: '/admin/notification-logs', label: 'Message Logs' },
     { href: '/admin/audit-logs', label: 'Audit Logs' },
     { href: '/admin/settings/commerce', label: 'Commerce' },
+    { href: '/admin/shipping-zones', label: 'Shipping Zones' },
     { href: '/admin/settings/modules', label: 'settings.modules' },
     { href: '/admin/settings/integrations/payment', label: 'Payments' },
     { href: '/admin/settings/integrations/courier', label: 'Couriers' },
