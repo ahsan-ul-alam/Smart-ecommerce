@@ -1,0 +1,38 @@
+{
+    "nav": {
+        "dashboard": "Dashboard",
+        "products": "Products",
+        "orders": "Orders",
+        "customers": "Customers",
+        "settings": "Settings",
+        "logout": "Logout"
+    },
+    "auth": {
+        "login": "Sign In",
+        "register": "Create Account",
+        "email": "Email Address",
+        "password": "Password",
+        "remember": "Remember me",
+        "no_account": "Don't have an account?",
+        "has_account": "Already have an account?"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "welcome": "Welcome back",
+        "orders_today": "Orders Today",
+        "revenue_today": "Revenue Today",
+        "customers": "Customers",
+        "products": "Products"
+    },
+    "settings": {
+        "general": "General Settings",
+        "modules": "Modules",
+        "integrations": "Integrations",
+        "save": "Save Changes"
+    },
+    "common": {
+        "loading": "Loading...",
+        "enabled": "Enabled",
+        "disabled": "Disabled"
+    }
+}

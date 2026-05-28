@@ -1,0 +1,38 @@
+{
+    "nav": {
+        "dashboard": "ড্যাশবোর্ড",
+        "products": "পণ্য",
+        "orders": "অর্ডার",
+        "customers": "গ্রাহক",
+        "settings": "সেটিংস",
+        "logout": "লগআউট"
+    },
+    "auth": {
+        "login": "সাইন ইন",
+        "register": "অ্যাকাউন্ট তৈরি",
+        "email": "ইমেইল",
+        "password": "পাসওয়ার্ড",
+        "remember": "মনে রাখুন",
+        "no_account": "অ্যাকাউন্ট নেই?",
+        "has_account": "ইতিমধ্যে অ্যাকাউন্ট আছে?"
+    },
+    "dashboard": {
+        "title": "ড্যাশবোর্ড",
+        "welcome": "স্বাগতম",
+        "orders_today": "আজকের অর্ডার",
+        "revenue_today": "আজকের আয়",
+        "customers": "গ্রাহক",
+        "products": "পণ্য"
+    },
+    "settings": {
+        "general": "সাধারণ সেটিংস",
+        "modules": "মডিউল",
+        "integrations": "ইন্টিগ্রেশন",
+        "save": "সংরক্ষণ"
+    },
+    "common": {
+        "loading": "লোড হচ্ছে...",
+        "enabled": "সক্রিয়",
+        "disabled": "নিষ্ক্রিয়"
+    }
+}
