@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\HomepageSectionController;
 use App\Http\Controllers\Admin\VendorController;
 use App\Http\Controllers\Admin\VendorCommissionController;
 use App\Http\Controllers\Admin\AbandonedCartController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\NotificationLogController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -64,6 +65,10 @@ Route::get('/', function () {
         ? Vendor::query()->where('is_active', true)->has('products')->withCount('products')->orderBy('name')->limit(8)->get(['id', 'name', 'slug', 'logo'])
         : collect();
 
+    $recentlyViewed = \App\Http\Resources\ProductResource::collection(
+        app(\App\Services\Commerce\RecentlyViewedService::class)->products(request(), null, 8)
+    )->resolve();
+
     return Inertia::render('Shop/Home', [
         'featured' => \App\Http\Resources\ProductResource::collection($featured)->resolve(),
         'banners' => $banners,
@@ -75,6 +80,7 @@ Route::get('/', function () {
             'ends_at' => $flashSales->first()->ends_at->toISOString(),
         ] : null,
         'flashProducts' => \App\Http\Resources\ProductResource::collection($flashProducts)->resolve(),
+        'recentlyViewed' => $recentlyViewed,
     ]);
 })->name('home');
 
@@ -154,6 +160,7 @@ Route::prefix('account')->middleware(['auth'])->name('account.')->group(function
     Route::get('/orders', [CustomerOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [CustomerOrderController::class, 'show'])->name('orders.show');
     Route::get('/orders/{order}/invoice', [CustomerOrderController::class, 'invoice'])->name('orders.invoice');
+    Route::post('/orders/{order}/return', [CustomerOrderController::class, 'requestReturn'])->name('orders.return');
     Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards');
     Route::get('/addresses', [CustomerAddressController::class, 'index'])->name('addresses.index');
     Route::post('/addresses', [CustomerAddressController::class, 'store'])->name('addresses.store');
@@ -180,11 +187,17 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+    Route::get('orders/{order}/packing-slip', [OrderController::class, 'packingSlip'])->name('orders.packing-slip');
+    Route::get('return-requests', [\App\Http\Controllers\Admin\ReturnRequestController::class, 'index'])->name('return-requests.index');
+    Route::patch('return-requests/{returnRequest}', [\App\Http\Controllers\Admin\ReturnRequestController::class, 'update'])->name('return-requests.update');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment');
     Route::patch('orders/{order}/note', [OrderController::class, 'updateNote'])->name('orders.note');
     Route::post('orders/{order}/shipment', [ShipmentController::class, 'store'])->name('orders.shipment');
 
+    Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
+    Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import');
+    Route::post('products/import', [ProductController::class, 'import'])->name('products.import.store');
     Route::resource('products', ProductController::class)->except(['show']);
     Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])->name('products.duplicate');
     Route::post('products/{product}/images', [ProductImageController::class, 'store'])->name('products.images.store');

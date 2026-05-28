@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\UpdateSettingsRequest;
 use App\Domain\Enums\IntegrationType;
 use App\Models\Integration;
 use App\Models\Module;
+use App\Services\Audit\AuditLogService;
 use App\Services\Modules\ModuleService;
 use App\Services\Settings\SettingService;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +20,7 @@ class SettingsController extends Controller
     public function __construct(
         protected SettingService $settings,
         protected ModuleService $modules,
+        protected AuditLogService $audit,
     ) {}
 
     public function general(): Response
@@ -108,6 +110,8 @@ class SettingsController extends Controller
         if ($request->hasFile('favicon')) {
             $this->settings->storeBrandAsset('favicon', $request->file('favicon'));
         }
+
+        $this->audit->log('settings.site_updated', null, null, ['site_name' => $settings['site_name']], $request);
 
         return back()->with('success', 'Site settings saved. Changes apply across the storefront and admin.');
     }

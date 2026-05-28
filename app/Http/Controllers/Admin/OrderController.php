@@ -7,6 +7,7 @@ use App\Domain\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
+use App\Services\Audit\AuditLogService;
 use App\Services\Commerce\OrderService;
 use App\Services\Settings\SettingService;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +21,7 @@ class OrderController extends Controller
     public function __construct(
         protected OrderService $orderService,
         protected SettingService $settings,
+        protected AuditLogService $audit,
     ) {}
 
     public function index(Request $request): Response
@@ -71,12 +73,15 @@ class OrderController extends Controller
             'note' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $oldStatus = $order->status?->value;
         $this->orderService->updateStatus(
             $order,
             OrderStatus::from($request->status),
             $request->note,
             $request->user()->id
         );
+
+        $this->audit->log('order.status_changed', $order, ['status' => $oldStatus], ['status' => $request->status], $request);
 
         return back()->with('success', 'Order status updated.');
     }
@@ -87,7 +92,9 @@ class OrderController extends Controller
             'payment_status' => ['required', 'string'],
         ]);
 
+        $old = $order->payment_status?->value;
         $this->orderService->updatePaymentStatus($order, PaymentStatus::from($request->payment_status));
+        $this->audit->log('order.payment_changed', $order, ['payment_status' => $old], ['payment_status' => $request->payment_status], $request);
 
         return back()->with('success', 'Payment status updated.');
     }
@@ -142,6 +149,16 @@ class OrderController extends Controller
         $order->load(['items', 'user:id,name,email']);
 
         return Inertia::render('Admin/Orders/Invoice', [
+            'order' => (new OrderResource($order))->resolve(),
+            'store' => $this->storeDetails(),
+        ]);
+    }
+
+    public function packingSlip(Order $order): Response
+    {
+        $order->load(['items', 'user:id,name,email', 'shipment']);
+
+        return Inertia::render('Admin/Orders/PackingSlip', [
             'order' => (new OrderResource($order))->resolve(),
             'store' => $this->storeDetails(),
         ]);

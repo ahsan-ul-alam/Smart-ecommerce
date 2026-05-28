@@ -12,19 +12,24 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Vendor;
 use App\Repositories\ProductRepository;
-use App\Services\Modules\ModuleService;
+use App\Services\Audit\AuditLogService;
+use App\Services\Catalog\ProductImportExportService;
 use App\Services\Catalog\ProductService;
+use App\Services\Modules\ModuleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProductController extends Controller
 {
     public function __construct(
         protected ProductRepository $products,
         protected ProductService $productService,
+        protected ProductImportExportService $importExport,
+        protected AuditLogService $audit,
     ) {}
 
     public function index(Request $request): Response
@@ -52,9 +57,58 @@ class ProductController extends Controller
         ]);
     }
 
+    public function export(Request $request): StreamedResponse
+    {
+        $filename = 'products-'.now()->format('Y-m-d-His').'.csv';
+
+        return response()->streamDownload(function () use ($request) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, $this->importExport->exportHeaders());
+
+            $this->products->query($request->only([
+                'search', 'status', 'category_id', 'brand_id', 'low_stock',
+            ]))->with(['category:id,name', 'brand:id,name'])->chunk(100, function ($chunk) use ($handle) {
+                foreach ($chunk as $product) {
+                    fputcsv($handle, $this->importExport->exportRow($product));
+                }
+            });
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    public function importForm(): Response
+    {
+        return Inertia::render('Admin/Products/Import', [
+            'sampleHeaders' => $this->importExport->exportHeaders(),
+        ]);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
+        ]);
+
+        $result = $this->importExport->import($request->file('file'));
+
+        $this->audit->log('products.imported', null, null, $result, $request);
+
+        $message = "Import complete: {$result['created']} created, {$result['updated']} updated.";
+        if (! empty($result['errors'])) {
+            $message .= ' '.count($result['errors']).' row(s) had errors.';
+        }
+
+        return redirect()
+            ->route('admin.products.index')
+            ->with($result['errors'] ? 'error' : 'success', $message)
+            ->with('import_errors', $result['errors']);
+    }
+
     public function store(StoreProductRequest $request): RedirectResponse
     {
         $product = $this->productService->create($request->validated());
+        $this->audit->log('product.created', $product, null, $product->only(['name', 'sku', 'status', 'price']), $request);
 
         return redirect()
             ->route('admin.products.edit', $product)
@@ -117,7 +171,9 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
+        $before = $product->only(['name', 'sku', 'status', 'price', 'stock_quantity']);
         $this->productService->update($product, $request->validated());
+        $this->audit->log('product.updated', $product, $before, $product->fresh()->only(['name', 'sku', 'status', 'price', 'stock_quantity']), $request);
 
         return back()->with('success', 'Product updated successfully.');
     }
@@ -143,6 +199,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        $this->audit->log('product.deleted', $product, $product->only(['name', 'sku']), null, request());
         $this->products->delete($product);
 
         return redirect()->route('admin.products.index')->with('success', 'Product deleted.');
