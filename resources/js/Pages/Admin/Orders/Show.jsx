@@ -29,9 +29,14 @@ export default function OrderShow({ order, statuses, paymentStatuses, couriers =
                         <Printer size={16} /> Print receipt
                     </Link>
                 ) : (
-                    <Link href={`/admin/orders/${order.id}/invoice`} className="inline-flex items-center gap-1 text-sm text-teal-700 hover:underline">
-                        <Printer size={16} /> Print invoice
-                    </Link>
+                    <>
+                        <Link href={`/admin/orders/${order.id}/invoice`} className="inline-flex items-center gap-1 text-sm text-teal-700 hover:underline">
+                            <Printer size={16} /> Print invoice
+                        </Link>
+                        <Link href={`/admin/orders/${order.id}/packing-slip`} className="inline-flex items-center gap-1 text-sm text-teal-700 hover:underline">
+                            <Printer size={16} /> Packing slip
+                        </Link>
+                    </>
                 )}
             </div>
 
