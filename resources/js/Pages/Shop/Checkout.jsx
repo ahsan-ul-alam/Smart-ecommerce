@@ -65,6 +65,8 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
                 setTotals((prev) => ({
                     ...prev,
                     shipping: res.data.shipping,
+                    tax: res.data.tax ?? prev.tax,
+                    tax_label: res.data.tax_label ?? prev.tax_label,
                     total: res.data.total,
                 }));
                 setShippingZone(res.data.shipping_zone);
@@ -194,6 +196,12 @@ export default function Checkout({ cart, paymentMethods, user, addresses = [], r
                                         <span>Shipping{shippingZone?.name ? ` (${shippingZone.name})` : ''}</span>
                                         <span>{totals.shipping === 0 ? 'Free' : formatPrice(totals.shipping)}</span>
                                     </div>
+                                    {totals.tax > 0 && (
+                                        <div className="flex justify-between">
+                                            <span>{totals.tax_label || 'Tax'}</span>
+                                            <span>{formatPrice(totals.tax)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between font-bold text-lg"><span>Total</span><span className="text-teal-700">{formatPrice(totals.total)}</span></div>
                                 </div>
                                 <Button type="submit" loading={processing} className="w-full mt-4">

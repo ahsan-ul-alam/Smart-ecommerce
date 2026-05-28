@@ -16,6 +16,9 @@ export default function Commerce({ settings }) {
             referral_reward_amount: settings.referral_reward_amount ?? 50,
             referral_reward_type: settings.referral_reward_type ?? 'wallet',
             affiliate_commission_rate: settings.affiliate_commission_rate ?? 5,
+            tax_enabled: !!settings.tax_enabled,
+            tax_rate: settings.tax_rate ?? 0,
+            tax_label: settings.tax_label ?? 'VAT',
         },
     });
 
@@ -69,6 +72,34 @@ export default function Commerce({ settings }) {
                                 </div>
                             </div>
                             <p className="text-xs text-slate-500 mt-2">Reward referrer when referred customer completes their first paid order.</p>
+                        </div>
+                        <div>
+                            <h4 className="font-medium mb-3">Tax / VAT</h4>
+                            <label className="flex items-center gap-2 mb-3 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={!!data.settings.tax_enabled}
+                                    onChange={(e) => setData('settings', { ...data.settings, tax_enabled: e.target.checked })}
+                                    className="rounded"
+                                />
+                                Enable tax on product subtotal (after discounts)
+                            </label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                    label="Tax rate (%)"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value={data.settings.tax_rate}
+                                    onChange={(e) => setData('settings', { ...data.settings, tax_rate: e.target.value })}
+                                />
+                                <Input
+                                    label="Label on receipts"
+                                    value={data.settings.tax_label}
+                                    onChange={(e) => setData('settings', { ...data.settings, tax_label: e.target.value })}
+                                />
+                            </div>
                         </div>
                         <div>
                             <h4 className="font-medium mb-3">Affiliate Program</h4>

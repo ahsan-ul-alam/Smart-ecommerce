@@ -135,8 +135,9 @@ class CartService
         );
 
         $shipping = $shippingResult['shipping'];
-        $tax = 0;
-        $total = max(0, $subtotal - $discount + $shipping + $tax);
+        $taxable = max(0, $subtotal - $discount);
+        $tax = $this->calculateTax($taxable);
+        $total = max(0, $taxable + $shipping + $tax);
 
         return [
             'subtotal' => round($subtotal, 2),
@@ -146,7 +147,9 @@ class CartService
             'shipping' => round($shipping, 2),
             'shipping_zone' => $shippingResult['zone'],
             'free_shipping_min' => $shippingResult['free_shipping_min'],
-            'tax' => round($tax, 2),
+            'tax' => $tax,
+            'tax_label' => $this->taxLabel(),
+            'tax_rate' => $this->taxRate(),
             'total' => round($total, 2),
             'item_count' => $cart->items->sum('quantity'),
         ];
@@ -160,7 +163,7 @@ class CartService
             return $totals;
         }
 
-        $afterCoupon = max(0, $totals['subtotal'] - $totals['discount'] + $totals['shipping']);
+        $afterCoupon = max(0, $totals['subtotal'] - $totals['discount'] + $totals['shipping'] + $totals['tax']);
 
         $loyalty = app(\App\Services\Customer\LoyaltyService::class);
         $wallet = app(\App\Services\Customer\WalletService::class);
@@ -295,6 +298,29 @@ class CartService
         }
 
         return (int) $product->stock_quantity;
+    }
+
+    protected function calculateTax(float $taxable): float
+    {
+        if (! $this->settings->get('commerce', 'tax_enabled', false)) {
+            return 0.0;
+        }
+
+        $rate = $this->taxRate();
+
+        return round($taxable * $rate / 100, 2);
+    }
+
+    protected function taxRate(): float
+    {
+        return max(0, (float) $this->settings->get('commerce', 'tax_rate', 0));
+    }
+
+    protected function taxLabel(): string
+    {
+        $label = trim((string) $this->settings->get('commerce', 'tax_label', 'VAT'));
+
+        return $label !== '' ? $label : 'VAT';
     }
 
     protected function assertStock(Product $product, ?ProductVariant $variant, int $quantity): void

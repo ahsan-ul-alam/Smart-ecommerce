@@ -82,6 +82,8 @@ class CheckoutController extends Controller
 
         return response()->json([
             'shipping' => $totals['shipping'],
+            'tax' => $totals['tax'],
+            'tax_label' => $totals['tax_label'] ?? 'VAT',
             'total' => $totals['total'],
             'shipping_zone' => $totals['shipping_zone'] ?? null,
             'free_shipping_min' => $totals['free_shipping_min'] ?? null,

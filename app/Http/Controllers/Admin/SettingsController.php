@@ -168,9 +168,15 @@ class SettingsController extends Controller
             'settings.referral_reward_amount' => ['nullable', 'numeric', 'min:0'],
             'settings.referral_reward_type' => ['nullable', 'in:wallet,loyalty'],
             'settings.affiliate_commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'settings.tax_enabled' => ['nullable', 'boolean'],
+            'settings.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'settings.tax_label' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $this->settings->updateGroup('commerce', $request->input('settings'));
+        $payload = $request->input('settings');
+        $this->settings->set('commerce', 'tax_enabled', $request->boolean('settings.tax_enabled'), 'boolean');
+        unset($payload['tax_enabled']);
+        $this->settings->updateGroup('commerce', $payload);
 
         return back()->with('success', 'Commerce settings updated.');
     }

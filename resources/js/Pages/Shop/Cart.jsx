@@ -82,6 +82,12 @@ export default function Cart({ cart }) {
                                         <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatPrice(totals.discount)}</span></div>
                                     )}
                                     <div className="flex justify-between"><span className="text-slate-500">Shipping</span><span>{totals.shipping === 0 ? 'Free' : formatPrice(totals.shipping)}</span></div>
+                                    {totals.tax > 0 && (
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-500">{totals.tax_label || 'Tax'}</span>
+                                            <span>{formatPrice(totals.tax)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between font-bold text-base border-t pt-3">
                                         <span>Total</span><span className="text-teal-700">{formatPrice(totals.total)}</span>
                                     </div>

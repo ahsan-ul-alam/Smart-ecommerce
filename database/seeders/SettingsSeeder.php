@@ -35,6 +35,9 @@ class SettingsSeeder extends Seeder
             'referral_reward_amount' => ['value' => 50, 'type' => 'float'],
             'referral_reward_type' => ['value' => 'wallet', 'type' => 'string'],
             'affiliate_commission_rate' => ['value' => 5, 'type' => 'float'],
+            'tax_enabled' => ['value' => false, 'type' => 'boolean'],
+            'tax_rate' => ['value' => 0, 'type' => 'float'],
+            'tax_label' => ['value' => 'VAT', 'type' => 'string'],
         ]);
 
         $settings->setMany('theme', [
