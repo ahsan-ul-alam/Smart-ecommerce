@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import { Plus, Search, Copy, Pencil, Trash2, AlertTriangle, Download, Upload } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
@@ -19,7 +20,33 @@ const statusVariant = {
 
 export default function ProductsIndex({ products, filters, categories, brands, statuses }) {
     const { flash } = usePage().props;
+    const [selected, setSelected] = useState([]);
     const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
+
+    const pageIds = products.data?.map((p) => p.id) ?? [];
+    const allOnPage = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
+
+    const toggleAll = () => {
+        if (allOnPage) {
+            setSelected((prev) => prev.filter((id) => !pageIds.includes(id)));
+        } else {
+            setSelected((prev) => [...new Set([...prev, ...pageIds])]);
+        }
+    };
+
+    const toggleOne = (id) => {
+        setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    };
+
+    const bulk = (action, status) => {
+        if (!selected.length) return;
+        const label = action === 'delete' ? `delete ${selected.length} product(s)` : `set ${selected.length} product(s) to ${status}`;
+        if (!confirm(`Are you sure you want to ${label}?`)) return;
+        router.post('/admin/products/bulk', { action, ids: selected, status }, {
+            onSuccess: () => setSelected([]),
+            preserveScroll: true,
+        });
+    };
 
     const exportUrl = () => {
         const params = new URLSearchParams();
@@ -105,11 +132,41 @@ export default function ProductsIndex({ products, filters, categories, brands, s
                 </div>
             </div>
 
+            {selected.length > 0 && (
+                <div className="mb-4 flex flex-wrap items-center gap-2 p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800">
+                    <span className="text-sm font-medium text-teal-900 dark:text-teal-200">{selected.length} selected</span>
+                    <select
+                        className="text-sm rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 bg-white dark:bg-slate-800"
+                        defaultValue=""
+                        onChange={(e) => {
+                            if (e.target.value) {
+                                bulk('status', e.target.value);
+                                e.target.value = '';
+                            }
+                        }}
+                    >
+                        <option value="">Set status…</option>
+                        {statuses.map((s) => (
+                            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        ))}
+                    </select>
+                    <Button variant="secondary" type="button" onClick={() => bulk('delete')}>
+                        <Trash2 size={14} /> Delete
+                    </Button>
+                    <button type="button" onClick={() => setSelected([])} className="text-sm text-slate-600 hover:underline ml-auto">
+                        Clear
+                    </button>
+                </div>
+            )}
+
             <Card>
                 <CardBody className="p-0 overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-slate-500">
+                                <th className="px-4 py-3 w-10">
+                                    <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="rounded" aria-label="Select all on page" />
+                                </th>
                                 <th className="px-6 py-3 font-medium">Product</th>
                                 <th className="px-6 py-3 font-medium">SKU</th>
                                 <th className="px-6 py-3 font-medium">Category</th>
@@ -122,6 +179,14 @@ export default function ProductsIndex({ products, filters, categories, brands, s
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {products.data?.length ? products.data.map((product) => (
                                 <tr key={product.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                    <td className="px-4 py-4">
+                                        <input
+                                            type="checkbox"
+                                            checked={selected.includes(product.id)}
+                                            onChange={() => toggleOne(product.id)}
+                                            className="rounded"
+                                        />
+                                    </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
@@ -164,7 +229,7 @@ export default function ProductsIndex({ products, filters, categories, brands, s
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-16 text-center text-slate-400">
+                                    <td colSpan={8} className="px-6 py-16 text-center text-slate-400">
                                         No products found. <Link href="/admin/products/create" className="text-teal-700 font-medium">Create one</Link>
                                     </td>
                                 </tr>

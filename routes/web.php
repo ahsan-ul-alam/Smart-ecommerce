@@ -45,6 +45,9 @@ use App\Http\Controllers\Shop\ProductController as ShopProductController;
 use App\Http\Controllers\Shop\VendorController as ShopVendorController;
 use App\Http\Controllers\Shop\ReviewController;
 use App\Http\Controllers\Shop\WishlistController;
+use App\Http\Controllers\Shop\NewsletterController as ShopNewsletterController;
+use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\Admin\NewsletterController;
 use App\Models\Banner;
 use App\Models\HomepageSection;
 use App\Models\Product;
@@ -86,6 +89,11 @@ Route::get('/', function () {
         'recentlyViewed' => $recentlyViewed,
     ]);
 })->name('home');
+
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
+
+Route::post('/newsletter/subscribe', [ShopNewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 
 Route::get('/pages/{slug}', [ShopPageController::class, 'show'])->name('pages.show');
 
@@ -177,6 +185,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
 
+    Route::get('newsletter', [NewsletterController::class, 'index'])->name('newsletter.index');
+    Route::get('newsletter/export', [NewsletterController::class, 'export'])->name('newsletter.export');
+    Route::delete('newsletter/{subscriber}', [NewsletterController::class, 'destroy'])->name('newsletter.destroy');
+
     Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
     Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
     Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
@@ -204,6 +216,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('products/import/template', [ProductController::class, 'importTemplate'])->name('products.import.template');
     Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import');
     Route::post('products/import', [ProductController::class, 'import'])->name('products.import.store');
+    Route::post('products/bulk', [ProductController::class, 'bulk'])->name('products.bulk');
 
     Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
     Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');

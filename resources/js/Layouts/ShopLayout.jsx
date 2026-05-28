@@ -1,11 +1,17 @@
-import { Link, usePage } from '@inertiajs/react';
-import { ShoppingCart, Search, Menu } from 'lucide-react';
+import { Link, useForm, usePage } from '@inertiajs/react';
+import { ShoppingCart, Search } from 'lucide-react';
 import FlashMessage from '../Components/UI/FlashMessage';
 import ApplyThemeBranding from '../Components/ApplyThemeBranding';
 
 export default function ShopLayout({ children }) {
     const { app, auth, cart, footerPages = [], modules = [], theme = {} } = usePage().props;
     const itemCount = cart?.item_count ?? 0;
+    const newsletter = useForm({ email: '' });
+
+    const subscribe = (e) => {
+        e.preventDefault();
+        newsletter.post('/newsletter/subscribe', { preserveScroll: true, onSuccess: () => newsletter.reset() });
+    };
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -58,11 +64,14 @@ export default function ShopLayout({ children }) {
                 </div>
             </header>
             <main>{children}</main>
-            <footer className="border-t border-slate-200 dark:border-slate-700 mt-16 py-8">
-                <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
-                    <p>© {new Date().getFullYear()} {app.name}. Bangladesh Smart eCommerce.</p>
+            <footer className="border-t border-slate-200 dark:border-slate-700 mt-16 py-10">
+                <div className="max-w-7xl mx-auto px-4 grid gap-8 md:grid-cols-3">
+                    <div>
+                        <p className="font-semibold text-slate-800 dark:text-white mb-1">{app.name}</p>
+                        <p className="text-sm text-slate-500">© {new Date().getFullYear()} Bangladesh Smart eCommerce.</p>
+                    </div>
                     {footerPages.length > 0 && (
-                        <nav className="flex flex-wrap justify-center gap-4">
+                        <nav className="flex flex-wrap gap-4 text-sm text-slate-500">
                             {footerPages.map((p) => (
                                 <Link key={p.slug} href={`/pages/${p.slug}`} className="hover:text-teal-700">
                                     {p.title}
@@ -70,6 +79,29 @@ export default function ShopLayout({ children }) {
                             ))}
                         </nav>
                     )}
+                    <form onSubmit={subscribe} className="md:col-span-1 md:justify-self-end w-full max-w-sm">
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Newsletter</p>
+                        <div className="flex gap-2">
+                            <input
+                                type="email"
+                                required
+                                placeholder="Your email"
+                                value={newsletter.data.email}
+                                onChange={(e) => newsletter.setData('email', e.target.value)}
+                                className="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
+                            />
+                            <button
+                                type="submit"
+                                disabled={newsletter.processing}
+                                className="px-4 py-2 rounded-lg bg-teal-700 text-white text-sm font-medium hover:bg-teal-800 disabled:opacity-60"
+                            >
+                                Join
+                            </button>
+                        </div>
+                        {newsletter.errors.email && (
+                            <p className="text-xs text-red-600 mt-1">{newsletter.errors.email}</p>
+                        )}
+                    </form>
                 </div>
             </footer>
         </div>

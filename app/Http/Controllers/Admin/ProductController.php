@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Enums\InventoryMovementType;
+use App\Domain\Enums\ProductStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
@@ -218,6 +219,38 @@ class ProductController extends Controller
         $this->products->delete($product);
 
         return redirect()->route('admin.products.index')->with('success', 'Product deleted.');
+    }
+
+    public function bulk(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'action' => ['required', 'in:status,delete'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:products,id'],
+            'status' => ['required_if:action,status', Rule::enum(ProductStatus::class)],
+        ]);
+
+        $products = Product::query()->whereIn('id', $data['ids'])->get();
+        $count = $products->count();
+
+        if ($data['action'] === 'delete') {
+            foreach ($products as $product) {
+                $this->audit->log('product.deleted', $product, $product->only(['name', 'sku']), null, $request);
+                $this->products->delete($product);
+            }
+
+            return back()->with('success', "{$count} product(s) deleted.");
+        }
+
+        $status = ProductStatus::from($data['status']);
+
+        foreach ($products as $product) {
+            $before = $product->only(['status']);
+            $this->productService->update($product, ['status' => $status]);
+            $this->audit->log('product.updated', $product, $before, ['status' => $status->value], $request);
+        }
+
+        return back()->with('success', "{$count} product(s) set to {$status->value}.");
     }
 
     public function duplicate(Product $product): RedirectResponse
