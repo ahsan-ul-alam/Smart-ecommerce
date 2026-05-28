@@ -3,12 +3,14 @@
 namespace App\Services\Commerce;
 
 use App\Models\ShippingZone;
+use App\Services\Geo\BangladeshLocationService;
 use App\Services\Settings\SettingService;
 
 class ShippingZoneService
 {
     public function __construct(
         protected SettingService $settings,
+        protected BangladeshLocationService $locations,
     ) {}
 
     public function calculate(float $subtotal, ?string $district = null, bool $hasItems = true): array
@@ -17,7 +19,7 @@ class ShippingZoneService
             return ['shipping' => 0.0, 'zone' => null, 'free_shipping_min' => null];
         }
 
-        $zone = $this->matchZone($district);
+        $zone = $this->matchZone($district ? $this->locations->normalizeDistrictForShipping($district) : null);
 
         $charge = (float) ($zone?->shipping_charge
             ?? $this->settings->get('commerce', 'shipping_charge', 80));
