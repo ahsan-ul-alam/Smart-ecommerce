@@ -8,10 +8,11 @@ import Button from '../../../Components/UI/Button';
 import Badge from '../../../Components/UI/Badge';
 import Textarea from '../../../Components/UI/Textarea';
 import Select from '../../../Components/UI/Select';
+import RecentlyViewedGrid from '../../../Components/Shop/RecentlyViewedGrid';
 
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
 
-export default function ProductShow({ product, related, reviews = [], avgRating = 0, inWishlist = false }) {
+export default function ProductShow({ product, related, recentlyViewed = [], reviews = [], avgRating = 0, inWishlist = false }) {
     const { auth } = usePage().props;
     const gallery = product.images?.length ? product.images : (product.image ? [{ url: product.image, id: 0 }] : []);
     const [activeImage, setActiveImage] = useState(gallery[0]?.url ?? null);
@@ -196,6 +197,12 @@ export default function ProductShow({ product, related, reviews = [], avgRating 
                         </p>
                     )}
                 </section>
+
+                {recentlyViewed?.length > 0 && (
+                    <div className="mt-16 -mx-0">
+                        <RecentlyViewedGrid products={recentlyViewed} title="Recently Viewed" />
+                    </div>
+                )}
 
                 {related?.length > 0 && (
                     <section className="mt-16">

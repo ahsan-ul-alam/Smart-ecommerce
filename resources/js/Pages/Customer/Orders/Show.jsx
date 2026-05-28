@@ -1,14 +1,26 @@
-import { Link } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Printer } from 'lucide-react';
 import AccountLayout from '../../../Layouts/AccountLayout';
 import Badge from '../../../Components/UI/Badge';
+import Button from '../../../Components/UI/Button';
+import Select from '../../../Components/UI/Select';
+import Textarea from '../../../Components/UI/Textarea';
+import FlashMessage from '../../../Components/UI/FlashMessage';
 import { Card, CardBody, CardHeader } from '../../../Components/UI/Card';
 
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
 
-export default function OrderShow({ order }) {
+export default function OrderShow({ order, returnReasons = {} }) {
+    const returnForm = useForm({ reason: Object.keys(returnReasons)[0] || 'defective', customer_note: '' });
+
+    const submitReturn = (e) => {
+        e.preventDefault();
+        returnForm.post(`/account/orders/${order.id}/return`, { preserveScroll: true });
+    };
+
     return (
         <AccountLayout title={`Order ${order.order_number}`}>
+            <FlashMessage />
             <div className="flex flex-wrap items-center gap-4 mb-4">
                 <Link href="/account/orders" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-teal-700">
                     <ArrowLeft size={16} /> Back to orders
@@ -40,6 +52,46 @@ export default function OrderShow({ order }) {
                             <p>{order.shipping_address?.city}, {order.shipping_address?.district}</p>
                         </CardBody>
                     </Card>
+
+                    {order.can_request_return && (
+                        <Card>
+                            <CardHeader title="Request a return" />
+                            <CardBody>
+                                <form onSubmit={submitReturn} className="space-y-3">
+                                    <Select
+                                        label="Reason"
+                                        value={returnForm.data.reason}
+                                        onChange={(e) => returnForm.setData('reason', e.target.value)}
+                                        options={Object.entries(returnReasons).map(([value, label]) => ({ value, label }))}
+                                    />
+                                    <Textarea
+                                        label="Additional details (optional)"
+                                        value={returnForm.data.customer_note}
+                                        onChange={(e) => returnForm.setData('customer_note', e.target.value)}
+                                        rows={3}
+                                    />
+                                    <Button type="submit" loading={returnForm.processing}>Submit return request</Button>
+                                </form>
+                            </CardBody>
+                        </Card>
+                    )}
+
+                    {order.return_request && (
+                        <Card>
+                            <CardHeader title="Return request" />
+                            <CardBody className="text-sm space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Status</span>
+                                    <Badge>{order.return_request.status_label}</Badge>
+                                </div>
+                                <p><span className="text-slate-500">Reason:</span> {order.return_request.reason}</p>
+                                {order.return_request.customer_note && <p>{order.return_request.customer_note}</p>}
+                                {order.return_request.admin_note && (
+                                    <p className="text-slate-500 border-t pt-2">Store note: {order.return_request.admin_note}</p>
+                                )}
+                            </CardBody>
+                        </Card>
+                    )}
                 </div>
                 <Card>
                     <CardHeader title="Order Summary" />

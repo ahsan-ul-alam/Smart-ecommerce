@@ -70,6 +70,11 @@ class Order extends Model
         return $this->hasOne(OrderShipment::class);
     }
 
+    public function returnRequest(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(OrderReturnRequest::class);
+    }
+
     public function customerName(): string
     {
         return $this->user?->name ?? $this->guest_name ?? 'Guest';

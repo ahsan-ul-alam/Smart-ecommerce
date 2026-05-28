@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import ShopLayout from '../../Layouts/ShopLayout';
 import ProductThumbnail from '../../Components/Catalog/ProductThumbnail';
 import ProductPrice from '../../Components/Catalog/ProductPrice';
+import RecentlyViewedGrid from '../../Components/Shop/RecentlyViewedGrid';
 
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
 
@@ -98,7 +99,7 @@ function SectionRenderer({ section, featured, flashSale, flashProducts }) {
     }
 }
 
-export default function Home({ featured = [], banners = [], flashSale = null, flashProducts = [], sections = [], vendors = [] }) {
+export default function Home({ featured = [], banners = [], flashSale = null, flashProducts = [], sections = [], vendors = [], recentlyViewed = [] }) {
     const hasHero = sections.some((s) => s.type === 'hero');
     const hasTrust = sections.some((s) => s.type === 'trust_badges');
     const hasFeaturedSection = sections.some((s) => s.type === 'featured_products');
@@ -200,6 +201,8 @@ export default function Home({ featured = [], banners = [], flashSale = null, fl
                     </div>
                 </section>
             )}
+
+            <RecentlyViewedGrid products={recentlyViewed} />
 
             {!hasTrust && (
                 <section className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">

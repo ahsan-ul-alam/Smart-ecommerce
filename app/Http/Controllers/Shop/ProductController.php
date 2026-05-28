@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\Commerce\RecentlyViewedService;
 use App\Services\Marketing\FlashSaleService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,6 +16,7 @@ class ProductController extends Controller
 {
     public function __construct(
         protected FlashSaleService $flashSales,
+        protected RecentlyViewedService $recentlyViewed,
     ) {}
 
     public function index(Request $request): Response
@@ -57,10 +59,14 @@ class ProductController extends Controller
 
         $relatedIds = $related->pluck('id')->all();
         $this->flashSales->hydrateCache(array_merge([$product->id], $relatedIds));
+        $this->recentlyViewed->track($request, $product->id);
+
+        $recent = $this->recentlyViewed->products($request, $product->id, 6);
 
         return Inertia::render('Shop/Products/Show', [
             'product' => (new ProductResource($product))->resolve(),
             'related' => ProductResource::collection($related)->resolve(),
+            'recentlyViewed' => ProductResource::collection($recent)->resolve(),
             'reviews' => $reviews->map(fn ($r) => [
                 'id' => $r->id,
                 'name' => $r->user?->name ?? $r->guest_name,

@@ -1,5 +1,5 @@
-import { Link, router } from '@inertiajs/react';
-import { Plus, Search, Copy, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { Plus, Search, Copy, Pencil, Trash2, AlertTriangle, Download, Upload } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
 import Input from '../../../Components/UI/Input';
@@ -18,7 +18,19 @@ const statusVariant = {
 };
 
 export default function ProductsIndex({ products, filters, categories, brands, statuses }) {
+    const { flash } = usePage().props;
     const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
+
+    const exportUrl = () => {
+        const params = new URLSearchParams();
+        if (filters.search) params.set('search', filters.search);
+        if (filters.status) params.set('status', filters.status);
+        if (filters.category_id) params.set('category_id', filters.category_id);
+        if (filters.brand_id) params.set('brand_id', filters.brand_id);
+        if (filters.low_stock) params.set('low_stock', '1');
+        const qs = params.toString();
+        return `/admin/products/export${qs ? `?${qs}` : ''}`;
+    };
 
     const search = (e) => {
         e.preventDefault();
@@ -37,6 +49,17 @@ export default function ProductsIndex({ products, filters, categories, brands, s
     return (
         <AdminLayout title="Products">
             <FlashMessage />
+
+            {flash?.import_errors?.length > 0 && (
+                <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-900">
+                    <p className="font-medium mb-1">Import warnings</p>
+                    <ul className="list-disc list-inside space-y-0.5 text-xs">
+                        {flash.import_errors.slice(0, 10).map((err, i) => (
+                            <li key={i}>{err}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <form onSubmit={search} className="flex flex-1 gap-2 flex-wrap">
@@ -69,9 +92,17 @@ export default function ProductsIndex({ products, filters, categories, brands, s
                     </label>
                     <Button type="submit" variant="secondary">Filter</Button>
                 </form>
-                <Link href="/admin/products/create">
-                    <Button><Plus size={16} /> Add Product</Button>
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                    <a href={exportUrl()} className="inline-flex items-center gap-1 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <Download size={16} /> Export CSV
+                    </a>
+                    <Link href="/admin/products/import" className="inline-flex items-center gap-1 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <Upload size={16} /> Import CSV
+                    </Link>
+                    <Link href="/admin/products/create">
+                        <Button><Plus size={16} /> Add Product</Button>
+                    </Link>
+                </div>
             </div>
 
             <Card>

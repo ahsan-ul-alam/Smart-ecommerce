@@ -48,6 +48,20 @@ class OrderResource extends JsonResource
                 'tracking_id' => $this->shipment->tracking_id,
                 'status' => $this->shipment->status,
             ]),
+            'can_request_return' => $this->when(
+                $this->relationLoaded('returnRequest'),
+                fn () => ! $this->returnRequest
+                    && in_array($this->status?->value, ['delivered', 'shipped'], true)
+            ),
+            'return_request' => $this->whenLoaded('returnRequest', fn () => $this->returnRequest ? [
+                'id' => $this->returnRequest->id,
+                'status' => $this->returnRequest->status?->value,
+                'status_label' => $this->returnRequest->status?->label(),
+                'reason' => $this->returnRequest->reason,
+                'customer_note' => $this->returnRequest->customer_note,
+                'admin_note' => $this->returnRequest->admin_note,
+                'created_at' => $this->returnRequest->created_at?->toISOString(),
+            ] : null),
             'status_histories' => $this->whenLoaded('statusHistories', fn () => $this->statusHistories->map(fn ($h) => [
                 'status' => $h->status?->value,
                 'status_label' => $h->status?->label(),
