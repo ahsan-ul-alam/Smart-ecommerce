@@ -11,8 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Inertia\Inertia;
-use Inertia\Response;
 use Spatie\Permission\Models\Role;
 
 class StaffController extends Controller
@@ -21,18 +19,20 @@ class StaffController extends Controller
         protected AuditLogService $audit,
     ) {}
 
-    public function index(): Response
+    public function index(Request $request): RedirectResponse
     {
-        $staff = User::query()
-            ->whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'admin', 'staff']))
-            ->with('roles:id,name')
-            ->latest()
-            ->paginate(15);
+        return redirect()->route('admin.team.index', $request->query());
+    }
 
-        return Inertia::render('Admin/Staff/Index', [
-            'staff' => $staff,
-            'roles' => Role::query()->whereIn('name', ['super_admin', 'admin', 'staff'])->orderBy('name')->pluck('name'),
-        ]);
+    protected function assignableRoleNames(Request $request): array
+    {
+        $names = Role::query()->where('name', '!=', 'customer')->orderBy('name')->pluck('name')->all();
+
+        if (! $request->user()->hasRole('super_admin')) {
+            $names = array_values(array_filter($names, fn (string $name) => $name !== 'super_admin'));
+        }
+
+        return $names;
     }
 
     public function store(Request $request): RedirectResponse
@@ -42,8 +42,12 @@ class StaffController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', Password::defaults()],
-            'role' => ['required', Rule::in(['admin', 'staff'])],
+            'role' => ['required', Rule::in($this->assignableRoleNames($request))],
         ]);
+
+        if ($data['role'] === 'super_admin' && ! $request->user()->hasRole('super_admin')) {
+            abort(403, 'Only super admins can assign the super_admin role.');
+        }
 
         $user = User::query()->create([
             'name' => $data['name'],
@@ -57,12 +61,12 @@ class StaffController extends Controller
 
         $this->audit->log('staff.created', $user, null, ['email' => $user->email, 'role' => $data['role']], $request);
 
-        return back()->with('success', 'Staff member created.');
+        return redirect()->route('admin.team.index', ['tab' => 'people'])->with('success', 'Team member invited.');
     }
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        abort_unless($user->hasAnyRole(['super_admin', 'admin', 'staff']), 404);
+        abort_unless($user->hasAnyRole(Role::query()->where('name', '!=', 'customer')->pluck('name')->all()), 404);
 
         if ($user->hasRole('super_admin') && ! $request->user()->hasRole('super_admin')) {
             abort(403);
@@ -72,7 +76,7 @@ class StaffController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:30'],
-            'role' => ['required', Rule::in(['super_admin', 'admin', 'staff'])],
+            'role' => ['required', Rule::in($this->assignableRoleNames($request))],
             'status' => ['required', Rule::enum(UserStatus::class)],
             'password' => ['nullable', Password::defaults()],
         ]);
@@ -93,20 +97,21 @@ class StaffController extends Controller
 
         $this->audit->log('staff.updated', $user, null, ['role' => $data['role'], 'status' => $data['status']], $request);
 
-        return back()->with('success', 'Staff member updated.');
+        return redirect()->route('admin.team.index', ['tab' => 'people'])->with('success', 'Team member updated.');
     }
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
-        abort_unless($user->hasAnyRole(['admin', 'staff']), 404);
+        abort_if($user->hasRole('super_admin'), 403, 'Super admin accounts cannot be deleted here.');
+        abort_unless($user->hasAnyRole(Role::query()->where('name', '!=', 'customer')->pluck('name')->all()), 404);
 
         if ($user->id === $request->user()->id) {
-            return back()->with('error', 'You cannot delete your own account.');
+            return redirect()->route('admin.team.index')->with('error', 'You cannot delete your own account.');
         }
 
         $this->audit->log('staff.deleted', $user, ['email' => $user->email], null, $request);
         $user->delete();
 
-        return back()->with('success', 'Staff member removed.');
+        return redirect()->route('admin.team.index', ['tab' => 'people'])->with('success', 'Team member removed.');
     }
 }

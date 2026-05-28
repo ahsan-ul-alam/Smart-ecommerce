@@ -10,7 +10,17 @@ import FlashMessage from '../../../Components/UI/FlashMessage';
 import Pagination from '../../../Components/UI/Pagination';
 import { Card, CardBody, CardHeader } from '../../../Components/UI/Card';
 
-export default function StaffIndex({ staff, roles }) {
+const roleName = (role) => (typeof role === 'string' ? role : role?.name);
+
+const userHasRole = (user, name) =>
+    (user.roles ?? []).some((r) => roleName(r) === name);
+
+export default function StaffIndex({ staff, roles, canAssignSuperAdmin = false }) {
+    const { auth } = usePage().props;
+
+    const roleOptions = roles
+        .filter((r) => canAssignSuperAdmin || r !== 'super_admin')
+        .map((r) => ({ value: r, label: r.replace('_', ' ') }));
     const [editing, setEditing] = useState(null);
     const createForm = useForm({ name: '', email: '', phone: '', password: '', role: 'staff' });
     const editForm = useForm({ name: '', email: '', phone: '', password: '', role: 'staff', status: 'active' });
@@ -22,8 +32,8 @@ export default function StaffIndex({ staff, roles }) {
             email: user.email,
             phone: user.phone || '',
             password: '',
-            role: user.roles?.[0] || 'staff',
-            status: user.status || 'active',
+            role: roleName(user.roles?.[0]) || 'staff',
+            status: typeof user.status === 'string' ? user.status : user.status?.value || 'active',
         });
     };
 
@@ -47,7 +57,7 @@ export default function StaffIndex({ staff, roles }) {
                         <Input label="Phone" value={createForm.data.phone} onChange={(e) => createForm.setData('phone', e.target.value)} />
                         <Input label="Password" type="password" value={createForm.data.password} onChange={(e) => createForm.setData('password', e.target.value)} error={createForm.errors.password} />
                         <Select label="Role" value={createForm.data.role} onChange={(e) => createForm.setData('role', e.target.value)}
-                            options={roles.filter((r) => r !== 'super_admin').map((r) => ({ value: r, label: r }))} />
+                            options={roleOptions} />
                         <div className="sm:col-span-2">
                             <Button type="submit" loading={createForm.processing}><Plus size={16} /> Create staff</Button>
                         </div>
@@ -72,11 +82,15 @@ export default function StaffIndex({ staff, roles }) {
                                 <tr key={user.id}>
                                     <td className="px-6 py-3 font-medium">{user.name}</td>
                                     <td className="px-6 py-3">{user.email}</td>
-                                    <td className="px-6 py-3 capitalize">{user.roles?.[0]}</td>
-                                    <td className="px-6 py-3"><Badge>{user.status}</Badge></td>
+                                    <td className="px-6 py-3 capitalize">{roleName(user.roles?.[0]) || '—'}</td>
+                                    <td className="px-6 py-3">
+                                        <Badge variant={user.status === 'active' ? 'success' : 'default'}>
+                                            {typeof user.status === 'string' ? user.status : user.status?.value || user.status}
+                                        </Badge>
+                                    </td>
                                     <td className="px-6 py-3 text-right">
                                         <button type="button" onClick={() => openEdit(user)} className="p-2 text-slate-400 hover:text-teal-700"><Pencil size={16} /></button>
-                                        {!user.roles?.includes('super_admin') && user.id !== auth?.user?.id && (
+                                        {!userHasRole(user, 'super_admin') && user.id !== auth?.user?.id && (
                                             <button type="button" onClick={() => confirm('Delete?') && router.delete(`/admin/staff/${user.id}`)} className="p-2 text-red-500"><Trash2 size={16} /></button>
                                         )}
                                     </td>
@@ -87,7 +101,7 @@ export default function StaffIndex({ staff, roles }) {
                 </CardBody>
             </Card>
 
-            <Pagination links={staff.links} className="mt-4" />
+            <Pagination links={staff.links} meta={staff.meta} />
 
             {editing && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -106,7 +120,7 @@ export default function StaffIndex({ staff, roles }) {
                                 <Input label="Phone" value={editForm.data.phone} onChange={(e) => editForm.setData('phone', e.target.value)} />
                                 <Input label="New password (optional)" type="password" value={editForm.data.password} onChange={(e) => editForm.setData('password', e.target.value)} />
                                 <Select label="Role" value={editForm.data.role} onChange={(e) => editForm.setData('role', e.target.value)}
-                                    options={roles.map((r) => ({ value: r, label: r }))} />
+                                    options={roleOptions} />
                                 <Select label="Status" value={editForm.data.status} onChange={(e) => editForm.setData('status', e.target.value)}
                                     options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'banned', label: 'Banned' }]} />
                                 <div className="flex gap-2">

@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\AbandonedCartController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\TeamController;
 use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Admin\NotificationLogController;
 use App\Http\Controllers\Auth\LoginController;
@@ -234,8 +235,12 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::post('products/import', [ProductController::class, 'import'])->name('products.import.store');
     Route::post('products/bulk', [ProductController::class, 'bulk'])->name('products.bulk');
 
+    Route::get('team', [TeamController::class, 'index'])->name('team.index');
     Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
     Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    Route::put('roles/{role}/members', [RoleController::class, 'syncMembers'])->name('roles.members.sync');
+    Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
 
     Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');

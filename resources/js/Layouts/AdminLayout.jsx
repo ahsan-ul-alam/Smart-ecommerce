@@ -25,7 +25,7 @@ const navItems = [
     { href: '/admin/customers', icon: Users, label: 'nav.customers', permission: 'customers.manage' },
     { href: '/admin/newsletter', icon: Users, label: 'Newsletter', permission: 'customers.manage' },
     { href: '/admin/contact-inquiries', icon: Users, label: 'Contact', permission: 'customers.manage' },
-    { href: '/admin/staff', icon: Users, label: 'Staff', permission: 'users.manage' },
+    { href: '/admin/team', icon: Users, label: 'Team', permissions: ['users.manage', 'roles.manage'] },
     { href: '/admin/settings/general', icon: Settings, label: 'nav.settings', permission: 'settings.manage' },
 ];
 
@@ -53,7 +53,6 @@ const settingsLinks = [
     { href: '/admin/audit-logs', label: 'Audit Logs', permission: 'settings.manage' },
     { href: '/admin/activity-logs', label: 'Activity Logs', permission: 'settings.manage' },
     { href: '/admin/settings/system', label: 'System Tools', permission: 'settings.manage' },
-    { href: '/admin/roles', label: 'Roles', permission: 'roles.manage' },
     { href: '/admin/settings/commerce', label: 'Commerce' },
     { href: '/admin/shipping-zones', label: 'Shipping Zones' },
     { href: '/admin/settings/modules', label: 'settings.modules' },
@@ -76,8 +75,17 @@ export default function AdminLayout({ children, title }) {
         ? auth.user.roles
         : Object.values(auth?.user?.roles ?? {});
 
+    const roleNames = roles.map((r) => (typeof r === 'string' ? r : r?.name)).filter(Boolean);
+
     const can = (permission) =>
-        permissions.includes(permission) || roles.includes('super_admin');
+        permissions.includes(permission) || roleNames.includes('super_admin');
+
+    const navCan = (item) => {
+        if (item.permissions?.length) {
+            return item.permissions.some((p) => can(p));
+        }
+        return can(item.permission);
+    };
 
     const toggleLocale = () => i18n.changeLanguage(i18n.language === 'en' ? 'bn' : 'en');
 
@@ -93,9 +101,11 @@ export default function AdminLayout({ children, title }) {
                     )}
                 </div>
                 <nav className="flex-1 p-4 space-y-1">
-                    {navItems.filter((item) => can(item.permission) && (!item.module || modules.includes(item.module))).map((item) => {
+                    {navItems.filter((item) => navCan(item) && (!item.module || modules.includes(item.module))).map((item) => {
                         const Icon = item.icon;
-                        const active = url === item.href || url.startsWith(item.href + '/');
+                        const active = url === item.href
+                            || url.startsWith(item.href + '/')
+                            || (item.href === '/admin/team' && (url.startsWith('/admin/staff') || url.startsWith('/admin/roles')));
                         return (
                             <Link
                                 key={item.href}
@@ -173,7 +183,6 @@ export default function AdminLayout({ children, title }) {
                 {(url.startsWith('/admin/settings')
                     || url.startsWith('/admin/audit-logs')
                     || url.startsWith('/admin/activity-logs')
-                    || url.startsWith('/admin/roles')
                     || url.startsWith('/admin/notification-logs')) && (
                     <div className="px-6 pt-4 flex gap-2 flex-wrap border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                         {settingsLinks.filter((link) => !link.permission || can(link.permission)).map((link) => (
