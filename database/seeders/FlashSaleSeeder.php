@@ -21,14 +21,15 @@ class FlashSaleSeeder extends Seeder
             ]
         );
 
-        $products = [
+        $flashProducts = [
             'samsung-galaxy-a55' => 39999,
             'walton-nexg-n25' => 11999,
             'aarong-cotton-panjabi' => 2800,
+            'xiaomi-redmi-note-13' => 21999,
         ];
 
         $sync = [];
-        foreach ($products as $slug => $salePrice) {
+        foreach ($flashProducts as $slug => $salePrice) {
             $product = Product::query()->where('slug', $slug)->first();
             if ($product) {
                 $sync[$product->id] = [

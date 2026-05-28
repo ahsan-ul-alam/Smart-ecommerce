@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import {
     Smartphone, Shirt, Home, Sparkles, Watch, Laptop, Baby, UtensilsCrossed, Grid3X3,
 } from 'lucide-react';
@@ -21,10 +22,11 @@ function categoryIcon(name) {
 }
 
 export default function HomeCategoryGrid({ categories = [] }) {
+    const { t } = useTranslation();
     if (!categories.length) return null;
 
     return (
-        <ShopSection title="Shop by category" subtitle="Browse our most popular collections">
+        <ShopSection title={t('home.shop_by_category')} subtitle={t('home.category_sub')}>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                 {categories.map((cat) => {
                     const Icon = categoryIcon(cat.name);

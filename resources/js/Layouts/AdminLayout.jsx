@@ -6,9 +6,6 @@ import {
     ShoppingCart,
     Users,
     Settings,
-    Moon,
-    Sun,
-    Globe,
     LogOut,
     Bell,
     Tag,
@@ -24,9 +21,11 @@ import {
     ChevronRight,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../contexts/ThemeContext";
 import clsx from "clsx";
 import ApplyThemeBranding from "../Components/ApplyThemeBranding";
+import LanguageSwitcher from "../Components/UI/LanguageSwitcher";
+import ThemeToggle from "../Components/UI/ThemeToggle";
+import { useSyncLocale } from "../hooks/useSyncLocale";
 
 const AdminShellContext = createContext({
     collapsed: false,
@@ -253,12 +252,8 @@ function SubNav({ links, url, t, can }) {
 function AdminTopBar({ title, showSearch, dateRange, can, alertCount = 0 }) {
     const { auth } = usePage().props;
     const { collapsed, setCollapsed } = useAdminShell();
-    const { dark, toggle } = useTheme();
-    const { i18n } = useTranslation();
+    const { t } = useTranslation();
     const isDashboard = showSearch;
-
-    const toggleLocale = () =>
-        i18n.changeLanguage(i18n.language === "en" ? "bn" : "en");
 
     const initials = auth.user?.name
         ?.split(" ")
@@ -273,7 +268,7 @@ function AdminTopBar({ title, showSearch, dateRange, can, alertCount = 0 }) {
                 type="button"
                 onClick={() => setCollapsed((v) => !v)}
                 className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100/90 dark:hover:bg-slate-800/80 transition-premium shrink-0"
-                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={collapsed ? t('admin.expand_sidebar') : t('admin.collapse_sidebar')}
                 aria-label="Toggle sidebar"
             >
                 <PanelLeft
@@ -303,7 +298,7 @@ function AdminTopBar({ title, showSearch, dateRange, can, alertCount = 0 }) {
                         <input
                             name="search"
                             type="search"
-                            placeholder="Search anything…"
+                            placeholder={t('admin.search_anything')}
                             className="w-full pl-10 pr-20 py-2.5 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-slate-800/70 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition-premium"
                         />
                         <kbd className="hidden lg:inline absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">
@@ -333,34 +328,16 @@ function AdminTopBar({ title, showSearch, dateRange, can, alertCount = 0 }) {
                                 "linear-gradient(90deg, var(--color-admin-accent), var(--color-admin-accent-end))",
                         }}
                     >
-                        <Plus size={16} /> Create
+                        <Plus size={16} /> {t('admin.create')}
                     </Link>
                 )}
-                <button
-                    type="button"
-                    onClick={toggleLocale}
-                    className="p-2.5 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-premium hidden sm:flex"
-                    title="Language"
-                >
-                    <Globe size={18} className="text-slate-500" />
-                </button>
-                <button
-                    type="button"
-                    onClick={toggle}
-                    className="p-2.5 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-premium"
-                    title="Theme"
-                >
-                    {dark ? (
-                        <Sun size={18} className="text-amber-400" />
-                    ) : (
-                        <Moon size={18} className="text-slate-500" />
-                    )}
-                </button>
+                <LanguageSwitcher className="hidden sm:block" />
+                <ThemeToggle />
                 <Link
                     href="/admin/alerts"
                     className="p-2.5 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-premium relative"
                     title={
-                        alertCount > 0 ? `${alertCount} alerts` : "No alerts"
+                        alertCount > 0 ? t('admin.alerts', { count: alertCount }) : t('admin.no_alerts')
                     }
                 >
                     <Bell size={18} className="text-slate-500" />
@@ -393,8 +370,8 @@ export default function AdminLayout({
 }) {
     const { auth, modules = [], theme = {}, app } = usePage().props;
     const { url } = usePage();
+    useSyncLocale();
     const { t } = useTranslation();
-    const { dark, toggle } = useTheme();
     const [collapsed, setCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
         return localStorage.getItem("admin-sidebar-collapsed") === "1";

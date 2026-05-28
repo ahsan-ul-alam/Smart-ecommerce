@@ -1,4 +1,13 @@
 {
+    "locale": {
+        "switch": "ভাষা পরিবর্তন",
+        "en": "ইংরেজি",
+        "bn": "বাংলা"
+    },
+    "theme": {
+        "light": "লাইট মোড",
+        "dark": "ডার্ক মোড"
+    },
     "nav": {
         "dashboard": "ড্যাশবোর্ড",
         "products": "পণ্য",
@@ -11,7 +20,17 @@
         "account": "অ্যাকাউন্ট",
         "team": "টিম",
         "reports": "রিপোর্ট",
-        "special_product": "বিশেষ পণ্য"
+        "special_product": "বিশেষ পণ্য",
+        "home": "হোম",
+        "all_products": "সব পণ্য",
+        "featured": "ফিচার্ড",
+        "flash_sale": "ফ্ল্যাশ সেল",
+        "contact": "যোগাযোগ",
+        "wishlist": "উইশলিস্ট",
+        "sign_in": "সাইন ইন",
+        "sign_out": "সাইন আউট",
+        "admin_panel": "অ্যাডমিন প্যানেল",
+        "my_account": "আমার অ্যাকাউন্ট"
     },
     "auth": {
         "login": "সাইন ইন",
@@ -22,18 +41,110 @@
         "forgot_password": "পাসওয়ার্ড ভুলে গেছেন?",
         "no_account": "অ্যাকাউন্ট নেই?",
         "has_account": "ইতিমধ্যে অ্যাকাউন্ট আছে?",
-        "verify_email": "ইমেইল যাচাই করুন"
+        "verify_email": "ইমেইল যাচাই করুন",
+        "name": "পুরো নাম"
     },
     "shop": {
-        "search_placeholder": "পণ্য, ব্র্যান্ড খুঁজুন…",
+        "search_placeholder": "পণ্য খুঁজুন…",
+        "search_in_catalog": "ক্যাটালগে খুঁজুন…",
+        "all_categories": "সব ক্যাটাগরি",
         "add_to_cart": "কার্টে যোগ করুন",
+        "buy_now": "এখনই কিনুন",
         "checkout": "চেকআউট",
         "cart_empty": "আপনার কার্ট খালি",
         "featured": "ফিচার্ড",
         "flash_sale": "ফ্ল্যাশ সেল",
         "contact": "যোগাযোগ",
         "faq": "প্রশ্নোত্তর",
-        "blog": "ব্লগ"
+        "blog": "ব্লগ",
+        "view_all": "সব দেখুন",
+        "quick_view": "দ্রুত দেখুন",
+        "in_stock": "স্টকে আছে",
+        "out_of_stock": "স্টক নেই",
+        "low_stock": "কম স্টক",
+        "nationwide_delivery": "সারাদেশে ডেলিভারি",
+        "cash_on_delivery": "ক্যাশ অন ডেলিভারি",
+        "easy_returns": "সহজ রিটার্ন",
+        "filters": "ফিল্টার",
+        "clear_all": "সব মুছুন",
+        "clear_filters": "ফিল্টার মুছুন",
+        "sort_by": "সাজান",
+        "sort_newest": "নতুন",
+        "sort_price_asc": "দাম: কম থেকে বেশি",
+        "sort_price_desc": "দাম: বেশি থেকে কম",
+        "sort_name": "নাম A–Z",
+        "all_products": "সব পণ্য",
+        "no_products": "কোনো পণ্য পাওয়া যায়নি",
+        "no_products_hint": "অন্য অনুসন্ধান, ক্যাটাগরি বা ফিল্টার চেষ্টা করুন।",
+        "price_range": "দামের পরিসর",
+        "categories": "ক্যাটাগরি",
+        "rating": "রেটিং",
+        "stars": "স্টার",
+        "reset": "রিসেট",
+        "minimum": "সর্বনিম্ন",
+        "maximum": "সর্বোচ্চ",
+        "shop_title": "শপ",
+        "shop_desc": "ক্যাটাগরি, অনুসন্ধান ও সাজানোর মাধ্যমে পণ্য খুঁজুন।",
+        "featured_title": "ফিচার্ড",
+        "continue_shopping": "কেনাকাটা চালিয়ে যান"
+    },
+    "home": {
+        "featured_products": "ফিচার্ড পণ্য",
+        "featured_sub": "আপনার জন্য বাছাইকৃত ডিল",
+        "trending": "ট্রেন্ডিং",
+        "trending_sub": "এ সপ্তাহের জনপ্রিয়",
+        "best_selling": "সেরা বিক্রয়",
+        "best_selling_sub": "গ্রাহকদের শীর্ষ অর্ডার",
+        "new_arrivals": "নতুন পণ্য",
+        "new_arrivals_sub": "নতুন এসেছে",
+        "recently_viewed": "সম্প্রতি দেখা",
+        "recently_viewed_sub": "যেখানে থেমেছিলেন",
+        "shop_by_category": "ক্যাটাগরি অনুযায়ী কিনুন",
+        "category_sub": "জনপ্রিয় কালেকশন ব্রাউজ করুন",
+        "adding": "যোগ হচ্ছে…",
+        "ends_in": "শেষ হবে",
+        "customer_reviews": "গ্রাহকদের মতামত",
+        "stay_updated": "আপডেট থাকুন",
+        "newsletter_desc": "ইনবক্সে ডিল ও নতুন পণ্য পান।",
+        "subscribe": "সাবস্ক্রাইব",
+        "email_placeholder": "ইমেইল ঠিকানা"
+    },
+    "footer": {
+        "shop": "শপ",
+        "help": "সাহায্য",
+        "stay_updated": "আপডেট থাকুন",
+        "all_products": "সব পণ্য",
+        "newsletter": "নিউজলেটার",
+        "rights": "সর্বস্বত্ব সংরক্ষিত।"
+    },
+    "account": {
+        "overview": "সারসংক্ষেপ",
+        "my_orders": "আমার অর্ডার",
+        "addresses": "ঠিকানা",
+        "rewards": "পয়েন্ট ও ওয়ালেট",
+        "my_account": "আমার অ্যাকাউন্ট"
+    },
+    "cart": {
+        "title": "শপিং কার্ট",
+        "subtotal": "সাবটোটাল",
+        "total": "মোট",
+        "proceed_checkout": "চেকআউটে যান",
+        "quantity": "পরিমাণ",
+        "remove": "সরান",
+        "empty_title": "আপনার কার্ট খালি",
+        "empty_desc": "পণ্য ব্রাউজ করুন এবং কার্টে যোগ করুন।"
+    },
+    "checkout": {
+        "title": "চেকআউট",
+        "shipping": "শিপিং বিবরণ",
+        "payment": "পেমেন্ট পদ্ধতি",
+        "place_order": "অর্ডার করুন"
+    },
+    "product": {
+        "description": "বিবরণ",
+        "reviews": "গ্রাহক রিভিউ",
+        "related": "আপনার পছন্দ হতে পারে",
+        "options": "অপশন"
     },
     "dashboard": {
         "title": "ড্যাশবোর্ড",
@@ -53,7 +164,18 @@
         "modules": "মডিউল",
         "integrations": "ইন্টিগ্রেশন",
         "save": "সংরক্ষণ",
-        "queue_monitor": "কিউ মনিটর"
+        "queue_monitor": "কিউ মনিটর",
+        "site": "সাইট সেটিংস",
+        "theme": "থিম",
+        "commerce": "কমার্স"
+    },
+    "admin": {
+        "create": "তৈরি",
+        "search_anything": "যেকোনো কিছু খুঁজুন…",
+        "expand_sidebar": "সাইডবার প্রসারিত",
+        "collapse_sidebar": "সাইডবার সংকুচিত",
+        "no_alerts": "কোনো অ্যালার্ট নেই",
+        "alerts": "{{count}} অ্যালার্ট"
     },
     "common": {
         "loading": "লোড হচ্ছে…",
@@ -63,6 +185,10 @@
         "cancel": "বাতিল",
         "delete": "মুছুন",
         "edit": "সম্পাদনা",
-        "view": "দেখুন"
+        "view": "দেখুন",
+        "search": "খুঁজুন",
+        "close": "বন্ধ",
+        "yes": "হ্যাঁ",
+        "no": "না"
     }
 }

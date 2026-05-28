@@ -65,6 +65,8 @@ use App\Http\Controllers\Shop\LocationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::post('/locale', [\App\Http\Controllers\LocaleController::class, 'update'])->name('locale.update');
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');

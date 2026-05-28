@@ -1,5 +1,6 @@
 import { Link, useForm, usePage, router } from '@inertiajs/react';
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     ShoppingCart, Search, Home, Grid3X3, User, Zap, Menu, X,
     Truck, ShieldCheck, Package, Heart, ChevronDown, Mail,
@@ -9,33 +10,38 @@ import FlashMessage from '../Components/UI/FlashMessage';
 import ApplyThemeBranding from '../Components/ApplyThemeBranding';
 import MiniCartDrawer from '../Components/Shop/MiniCartDrawer';
 import CampaignPopup from '../Components/Shop/CampaignPopup';
-
-const primaryNav = [
-    { href: '/shop/products', label: 'All Products', match: (url) => url.startsWith('/shop/products') && !url.includes('featured') },
-    { href: '/shop/products?featured=1', label: 'Featured', match: (url) => url.includes('featured=1') },
-    { href: '/shop/flash-sales', label: 'Flash Sale', module: 'flash_sale', accent: true, match: (url) => url.startsWith('/shop/flash-sales') },
-    { href: '/shop/contact', label: 'Contact', match: (url) => url.startsWith('/shop/contact') },
-];
-
-const footerShop = [
-    { href: '/shop/products', label: 'All products' },
-    { href: '/shop/products?featured=1', label: 'Featured' },
-    { href: '/shop/cart', label: 'Cart' },
-    { href: '/wishlist', label: 'Wishlist', auth: true },
-];
-
-const footerSupport = [
-    { href: '/shop/faq', label: 'FAQ' },
-    { href: '/shop/contact', label: 'Contact' },
-    { href: '/newsletter/unsubscribe', label: 'Newsletter' },
-];
+import LanguageSwitcher from '../Components/UI/LanguageSwitcher';
+import ThemeToggle from '../Components/UI/ThemeToggle';
+import { useSyncLocale } from '../hooks/useSyncLocale';
 
 export default function ShopLayout({ children, fullWidth = false }) {
+    useSyncLocale();
+    const { t } = useTranslation();
     const {
         app, auth, cart, footerPages = [], modules = [], theme = {}, branding = {},
         campaignPopup, url, shopNav = {}, wishlistCount = 0,
     } = usePage().props;
     const categories = shopNav.categories ?? [];
+
+    const primaryNav = useMemo(() => [
+        { href: '/shop/products', label: t('nav.all_products'), match: (u) => u.startsWith('/shop/products') && !u.includes('featured') },
+        { href: '/shop/products?featured=1', label: t('nav.featured'), match: (u) => u.includes('featured=1') },
+        { href: '/shop/flash-sales', label: t('nav.flash_sale'), module: 'flash_sale', accent: true, match: (u) => u.startsWith('/shop/flash-sales') },
+        { href: '/shop/contact', label: t('nav.contact'), match: (u) => u.startsWith('/shop/contact') },
+    ], [t]);
+
+    const footerShop = useMemo(() => [
+        { href: '/shop/products', label: t('footer.all_products') },
+        { href: '/shop/products?featured=1', label: t('nav.featured') },
+        { href: '/shop/cart', label: t('nav.cart') },
+        { href: '/wishlist', label: t('nav.wishlist'), auth: true },
+    ], [t]);
+
+    const footerSupport = useMemo(() => [
+        { href: '/shop/faq', label: t('shop.faq') },
+        { href: '/shop/contact', label: t('nav.contact') },
+        { href: '/newsletter/unsubscribe', label: t('footer.newsletter') },
+    ], [t]);
     const itemCount = cart?.item_count ?? 0;
     const newsletter = useForm({ email: '' });
     const [mobileMenu, setMobileMenu] = useState(false);
@@ -96,9 +102,9 @@ export default function ShopLayout({ children, fullWidth = false }) {
                         <span />
                     )}
                     <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-1">
-                        <span className="inline-flex items-center gap-1.5"><Truck size={13} className="text-primary" /> Nationwide delivery</span>
-                        <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} className="text-primary" /> Cash on delivery</span>
-                        <span className="inline-flex items-center gap-1.5"><Package size={13} className="text-primary" /> Easy returns</span>
+                        <span className="inline-flex items-center gap-1.5"><Truck size={13} className="text-primary" /> {t('shop.nationwide_delivery')}</span>
+                        <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} className="text-primary" /> {t('shop.cash_on_delivery')}</span>
+                        <span className="inline-flex items-center gap-1.5"><Package size={13} className="text-primary" /> {t('shop.easy_returns')}</span>
                         {branding.store_phone && (
                             <span className="inline-flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
                                 {branding.store_phone}
@@ -128,7 +134,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                                         className="shop-search-category h-full pl-3 pr-8 py-3 text-sm border-r border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/80 rounded-l-xl appearance-none cursor-pointer"
                                         aria-label="Category"
                                     >
-                                        <option value="">All categories</option>
+                                        <option value="">{t('shop.all_categories')}</option>
                                         {categories.map((c) => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
@@ -138,7 +144,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                                     type="search"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search for products…"
+                                    placeholder={t('shop.search_placeholder')}
                                     className="flex-1 min-w-0 px-4 py-3 text-sm border-0 bg-white dark:bg-slate-800 focus:outline-none focus:ring-0"
                                 />
                                 <button
@@ -172,6 +178,8 @@ export default function ShopLayout({ children, fullWidth = false }) {
                         </nav>
 
                         <div className="flex items-center gap-0.5 sm:gap-1 ml-auto xl:ml-2">
+                            <LanguageSwitcher className="hidden sm:block" />
+                            <ThemeToggle className="hidden sm:flex" />
                             <button
                                 type="button"
                                 onClick={() => setCartOpen(true)}
@@ -220,25 +228,25 @@ export default function ShopLayout({ children, fullWidth = false }) {
                                         <div className="absolute right-0 top-full mt-2 w-48 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-lg z-[60]">
                                             {isAdmin ? (
                                                 <Link href="/admin" className="block px-4 py-2.5 text-sm font-medium text-primary hover:bg-slate-50 dark:hover:bg-slate-700" onClick={() => setUserMenuOpen(false)}>
-                                                    Admin panel
+                                                    {t('nav.admin_panel')}
                                                 </Link>
                                             ) : (
                                                 <Link href="/account" className="block px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700" onClick={() => setUserMenuOpen(false)}>
-                                                    My account
+                                                    {t('nav.my_account')}
                                                 </Link>
                                             )}
                                             <Link href="/wishlist" className="block px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700" onClick={() => setUserMenuOpen(false)}>
-                                                Wishlist
+                                                {t('nav.wishlist')}
                                             </Link>
                                             <Link href="/logout" method="post" as="button" className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-slate-50 dark:hover:bg-slate-700">
-                                                Sign out
+                                                {t('nav.sign_out')}
                                             </Link>
                                         </div>
                                     )}
                                 </div>
                             ) : (
                                 <Link href="/login" className="hidden sm:inline-flex text-sm font-semibold bg-primary text-white px-4 py-2.5 rounded-xl hover:opacity-90 transition-premium">
-                                    Sign in
+                                    {t('nav.sign_in')}
                                 </Link>
                             )}
 
@@ -262,7 +270,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                                     onChange={(e) => setSearchCategory(e.target.value)}
                                     className="input-premium sm:w-40"
                                 >
-                                    <option value="">All categories</option>
+                                    <option value="">{t('shop.all_categories')}</option>
                                     {categories.map((c) => (
                                         <option key={c.id} value={c.id}>{c.name}</option>
                                     ))}
@@ -271,16 +279,20 @@ export default function ShopLayout({ children, fullWidth = false }) {
                                     type="search"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search products…"
+                                    placeholder={t('shop.search_placeholder')}
                                     className="input-premium flex-1"
                                 />
                                 <button type="submit" className="px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold">
-                                    Search
+                                    {t('common.search')}
                                 </button>
                             </form>
+                            <div className="flex items-center gap-2 sm:hidden">
+                                <LanguageSwitcher />
+                                <ThemeToggle />
+                            </div>
                             <nav className="grid grid-cols-2 gap-2 text-sm">
                                 <Link href="/" className="p-3 rounded-xl bg-white dark:bg-slate-800 border font-medium flex items-center gap-2" onClick={() => setMobileMenu(false)}>
-                                    <Home size={16} /> Home
+                                    <Home size={16} /> {t('nav.home')}
                                 </Link>
                                 {navItems.map((item) => (
                                     <Link
@@ -295,7 +307,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                             </nav>
                             {!auth.user && (
                                 <Link href="/login" className="block text-center py-3 rounded-xl bg-primary text-white font-semibold" onClick={() => setMobileMenu(false)}>
-                                    Sign in
+                                    {t('nav.sign_in')}
                                 </Link>
                             )}
                         </div>
@@ -315,10 +327,10 @@ export default function ShopLayout({ children, fullWidth = false }) {
                         <div className="sm:col-span-2 lg:col-span-1">
                             <p className="font-bold text-lg text-slate-900 dark:text-white">{app.name}</p>
                             {app.tagline && <p className="text-sm text-slate-500 mt-1">{app.tagline}</p>}
-                            <p className="text-xs text-slate-400 mt-4">© {new Date().getFullYear()} All rights reserved.</p>
+                            <p className="text-xs text-slate-400 mt-4">© {new Date().getFullYear()} {t('footer.rights')}</p>
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-white mb-3">Shop</p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-white mb-3">{t('footer.shop')}</p>
                             <ul className="space-y-2 text-sm text-slate-500">
                                 {footerShop.filter((l) => !l.auth || auth.user).map((link) => (
                                     <li key={link.href}>
@@ -328,7 +340,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                             </ul>
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-white mb-3">Help</p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-white mb-3">{t('footer.help')}</p>
                             <ul className="space-y-2 text-sm text-slate-500">
                                 {footerSupport.map((link) => (
                                     <li key={link.href}>
@@ -343,12 +355,12 @@ export default function ShopLayout({ children, fullWidth = false }) {
                             </ul>
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-white mb-3">Stay updated</p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-white mb-3">{t('footer.stay_updated')}</p>
                             <form onSubmit={subscribe} className="space-y-2">
                                 <input
                                     type="email"
                                     required
-                                    placeholder="Email address"
+                                    placeholder={t('home.email_placeholder')}
                                     value={newsletter.data.email}
                                     onChange={(e) => newsletter.setData('email', e.target.value)}
                                     className="input-premium w-full"
@@ -358,7 +370,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                                     disabled={newsletter.processing}
                                     className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-premium"
                                 >
-                                    Subscribe
+                                    {t('home.subscribe')}
                                 </button>
                             </form>
                         </div>
@@ -369,10 +381,10 @@ export default function ShopLayout({ children, fullWidth = false }) {
             <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 glass-dark border-t safe-area-pb" aria-label="Mobile">
                 <div className="grid grid-cols-4 h-16">
                     {[
-                        { href: '/', icon: Home, label: 'Home', active: currentUrl === '/' },
-                        { href: '/shop/products', icon: Grid3X3, label: 'Shop', active: currentUrl.startsWith('/shop/products') },
-                        { action: () => setCartOpen(true), icon: ShoppingCart, label: 'Cart', badge: itemCount, active: false },
-                        { href: auth.user ? '/account' : '/login', icon: User, label: auth.user ? 'Account' : 'Sign in', active: currentUrl.startsWith('/account') || currentUrl === '/login' },
+                        { href: '/', icon: Home, label: t('nav.home'), active: currentUrl === '/' },
+                        { href: '/shop/products', icon: Grid3X3, label: t('nav.shop'), active: currentUrl.startsWith('/shop/products') },
+                        { action: () => setCartOpen(true), icon: ShoppingCart, label: t('nav.cart'), badge: itemCount, active: false },
+                        { href: auth.user ? '/account' : '/login', icon: User, label: auth.user ? t('nav.account') : t('nav.sign_in'), active: currentUrl.startsWith('/account') || currentUrl === '/login' },
                     ].map((item, idx) => {
                         const className = clsx(
                             'flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors relative',

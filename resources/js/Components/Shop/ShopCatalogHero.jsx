@@ -1,13 +1,16 @@
+import { useTranslation } from 'react-i18next';
 import ShopBreadcrumbs from './ShopBreadcrumbs';
 
-export default function ShopCatalogHero({ title = 'Shop', description, featured = false }) {
+export default function ShopCatalogHero({ title, description, featured = false }) {
+    const { t } = useTranslation();
+    const heroTitle = title ?? t('shop.shop_title');
     return (
         <section className="shop-catalog-hero">
             <div className="shop-container relative z-[1] py-8 sm:py-10">
                 <ShopBreadcrumbs items={[{ label: 'Shop' }]} className="text-white/80 [&_a]:text-white/90 [&_span]:text-white" />
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mt-3">
                     <div>
-                        <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">{title}</h1>
+                        <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">{heroTitle}</h1>
                         {description && (
                             <p className="text-white/85 mt-2 text-sm sm:text-base max-w-lg">{description}</p>
                         )}
@@ -26,7 +29,7 @@ export default function ShopCatalogHero({ title = 'Shop', description, featured 
             </div>
             {featured && (
                 <span className="absolute top-4 right-4 sm:right-8 px-3 py-1 rounded-full bg-amber-400/90 text-amber-950 text-xs font-bold">
-                    Featured
+                    {t('nav.featured')}
                 </span>
             )}
         </section>

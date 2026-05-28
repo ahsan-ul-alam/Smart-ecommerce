@@ -1,13 +1,17 @@
 import { Link, usePage } from '@inertiajs/react';
 import ApplyThemeBranding from '../Components/ApplyThemeBranding';
+import LanguageSwitcher from '../Components/UI/LanguageSwitcher';
+import ThemeToggle from '../Components/UI/ThemeToggle';
+import { useSyncLocale } from '../hooks/useSyncLocale';
 
 export default function GuestLayout({ children }) {
+    useSyncLocale();
     const { app, theme = {} } = usePage().props;
 
     return (
         <div className="min-h-screen shop-mesh-bg flex flex-col">
             <ApplyThemeBranding />
-            <header className="p-6 lg:p-8">
+            <header className="p-6 lg:p-8 flex items-center justify-between gap-4">
                 <Link href="/" className="inline-flex items-center">
                     {theme.logo ? (
                         <img src={theme.logo} alt={app?.name} className="h-10 w-auto max-w-[200px] object-contain" />
@@ -17,6 +21,10 @@ export default function GuestLayout({ children }) {
                         </span>
                     )}
                 </Link>
+                <div className="flex items-center gap-1">
+                    <LanguageSwitcher />
+                    <ThemeToggle />
+                </div>
             </header>
             <main className="flex-1 flex items-center justify-center p-6 pb-12 w-full">
                 <div className="w-full max-w-7xl mx-auto">{children}</div>

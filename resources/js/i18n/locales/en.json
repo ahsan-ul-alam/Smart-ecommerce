@@ -1,4 +1,13 @@
 {
+    "locale": {
+        "switch": "Change language",
+        "en": "English",
+        "bn": "Bengali"
+    },
+    "theme": {
+        "light": "Light mode",
+        "dark": "Dark mode"
+    },
     "nav": {
         "dashboard": "Dashboard",
         "products": "Products",
@@ -11,7 +20,17 @@
         "account": "Account",
         "team": "Team",
         "reports": "Reports",
-        "special_product": "Special Product"
+        "special_product": "Special Product",
+        "home": "Home",
+        "all_products": "All Products",
+        "featured": "Featured",
+        "flash_sale": "Flash Sale",
+        "contact": "Contact",
+        "wishlist": "Wishlist",
+        "sign_in": "Sign in",
+        "sign_out": "Sign out",
+        "admin_panel": "Admin panel",
+        "my_account": "My account"
     },
     "auth": {
         "login": "Sign In",
@@ -22,18 +41,110 @@
         "forgot_password": "Forgot password?",
         "no_account": "Don't have an account?",
         "has_account": "Already have an account?",
-        "verify_email": "Verify your email"
+        "verify_email": "Verify your email",
+        "name": "Full name"
     },
     "shop": {
-        "search_placeholder": "Search products, brands…",
+        "search_placeholder": "Search for products…",
+        "search_in_catalog": "Search in catalog…",
+        "all_categories": "All categories",
         "add_to_cart": "Add to cart",
+        "buy_now": "Buy now",
         "checkout": "Checkout",
         "cart_empty": "Your cart is empty",
         "featured": "Featured",
         "flash_sale": "Flash Sale",
         "contact": "Contact",
         "faq": "FAQ",
-        "blog": "Blog"
+        "blog": "Blog",
+        "view_all": "View all",
+        "quick_view": "Quick view",
+        "in_stock": "In stock",
+        "out_of_stock": "Out of stock",
+        "low_stock": "Low stock",
+        "nationwide_delivery": "Nationwide delivery",
+        "cash_on_delivery": "Cash on delivery",
+        "easy_returns": "Easy returns",
+        "filters": "Filters",
+        "clear_all": "Clear all",
+        "clear_filters": "Clear filters",
+        "sort_by": "Sort by",
+        "sort_newest": "Newest",
+        "sort_price_asc": "Price: low to high",
+        "sort_price_desc": "Price: high to low",
+        "sort_name": "Name A–Z",
+        "all_products": "All products",
+        "no_products": "No products found",
+        "no_products_hint": "Try another search, category, or filter.",
+        "price_range": "Price range",
+        "categories": "Categories",
+        "rating": "Rating",
+        "stars": "stars",
+        "reset": "Reset",
+        "minimum": "Minimum",
+        "maximum": "Maximum",
+        "shop_title": "Shop",
+        "shop_desc": "Find what you need with categories, search, and sorting.",
+        "featured_title": "Featured",
+        "continue_shopping": "Continue Shopping"
+    },
+    "home": {
+        "featured_products": "Featured products",
+        "featured_sub": "Hand-picked deals for you",
+        "trending": "Trending now",
+        "trending_sub": "Popular picks this week",
+        "best_selling": "Best selling",
+        "best_selling_sub": "Top orders from our customers",
+        "new_arrivals": "New arrivals",
+        "new_arrivals_sub": "Fresh products just landed",
+        "recently_viewed": "Recently viewed",
+        "recently_viewed_sub": "Continue where you left off",
+        "shop_by_category": "Shop by category",
+        "category_sub": "Browse our most popular collections",
+        "adding": "Adding…",
+        "ends_in": "Ends in",
+        "customer_reviews": "What customers say",
+        "stay_updated": "Stay in the loop",
+        "newsletter_desc": "Get deals and new arrivals in your inbox.",
+        "subscribe": "Subscribe",
+        "email_placeholder": "Email address"
+    },
+    "footer": {
+        "shop": "Shop",
+        "help": "Help",
+        "stay_updated": "Stay updated",
+        "all_products": "All products",
+        "newsletter": "Newsletter",
+        "rights": "All rights reserved."
+    },
+    "account": {
+        "overview": "Overview",
+        "my_orders": "My Orders",
+        "addresses": "Addresses",
+        "rewards": "Points & Wallet",
+        "my_account": "My Account"
+    },
+    "cart": {
+        "title": "Shopping cart",
+        "subtotal": "Subtotal",
+        "total": "Total",
+        "proceed_checkout": "Proceed to checkout",
+        "quantity": "Quantity",
+        "remove": "Remove",
+        "empty_title": "Your cart is empty",
+        "empty_desc": "Browse products and add items to your cart."
+    },
+    "checkout": {
+        "title": "Checkout",
+        "shipping": "Shipping details",
+        "payment": "Payment method",
+        "place_order": "Place order"
+    },
+    "product": {
+        "description": "Description",
+        "reviews": "Customer reviews",
+        "related": "You may also like",
+        "options": "Options"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -53,7 +164,18 @@
         "modules": "Modules",
         "integrations": "Integrations",
         "save": "Save Changes",
-        "queue_monitor": "Queue monitor"
+        "queue_monitor": "Queue monitor",
+        "site": "Site settings",
+        "theme": "Theme",
+        "commerce": "Commerce"
+    },
+    "admin": {
+        "create": "Create",
+        "search_anything": "Search anything…",
+        "expand_sidebar": "Expand sidebar",
+        "collapse_sidebar": "Collapse sidebar",
+        "no_alerts": "No alerts",
+        "alerts": "{{count}} alerts"
     },
     "common": {
         "loading": "Loading...",
@@ -63,6 +185,10 @@
         "cancel": "Cancel",
         "delete": "Delete",
         "edit": "Edit",
-        "view": "View"
+        "view": "View",
+        "search": "Search",
+        "close": "Close",
+        "yes": "Yes",
+        "no": "No"
     }
 }

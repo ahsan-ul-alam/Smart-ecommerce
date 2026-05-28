@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal, X } from 'lucide-react';
 import ShopLayout from '../../../Layouts/ShopLayout';
 import ShopCatalogHero from '../../../Components/Shop/ShopCatalogHero';
@@ -10,13 +11,6 @@ import EmptyState from '../../../Components/UI/EmptyState';
 import Pagination from '../../../Components/UI/Pagination';
 import { Package } from 'lucide-react';
 
-const sortOptions = [
-    { value: '', label: 'Newest' },
-    { value: 'price_asc', label: 'Price: low to high' },
-    { value: 'price_desc', label: 'Price: high to low' },
-    { value: 'name', label: 'Name A–Z' },
-];
-
 export default function ProductsIndex({
     products,
     categories = [],
@@ -24,14 +18,28 @@ export default function ProductsIndex({
     filters = {},
     wishlistProductIds = [],
 }) {
+    const { t } = useTranslation();
     const [mobileFilters, setMobileFilters] = useState(false);
+
+    const sortOptions = useMemo(() => [
+        { value: '', label: t('shop.sort_newest') },
+        { value: 'price_asc', label: t('shop.sort_price_asc') },
+        { value: 'price_desc', label: t('shop.sort_price_desc') },
+        { value: 'name', label: t('shop.sort_name') },
+    ], [t]);
     const productList = products.data ?? [];
     const meta = products.meta ?? {};
     const totalAll = catalogMeta.total_products ?? 0;
     const activeCategory = categories.find((c) => String(c.id) === String(filters.category));
 
     const applyFilters = (patch) => {
-        router.get('/shop/products', { ...filters, ...patch }, { preserveState: true, preserveScroll: true });
+        const params = { ...filters, ...patch };
+        Object.keys(params).forEach((key) => {
+            if (params[key] === undefined || params[key] === null || params[key] === '') {
+                delete params[key];
+            }
+        });
+        router.get('/shop/products', params, { preserveState: true, preserveScroll: true });
     };
 
     const clearFilters = () => {
@@ -71,8 +79,8 @@ export default function ProductsIndex({
     return (
         <ShopLayout fullWidth>
             <ShopCatalogHero
-                title={filters.featured ? 'Featured' : 'Shop'}
-                description="Find what you need with categories, search, and sorting."
+                title={filters.featured ? t('shop.featured_title') : t('shop.shop_title')}
+                description={t('shop.shop_desc')}
                 featured={Boolean(filters.featured)}
             />
 
@@ -94,13 +102,23 @@ export default function ProductsIndex({
                                         onClick={clearFilters}
                                         className="inline-flex items-center gap-1 text-sm text-primary font-semibold hover:underline"
                                     >
-                                        <X size={14} /> Clear all
+                                        <X size={14} /> {t('shop.clear_all')}
                                     </button>
                                 )}
                                 {filters.search && (
                                     <span className="shop-filter-tag">
                                         “{filters.search}”
                                         <button type="button" onClick={() => applyFilters({ search: undefined })} aria-label="Remove search">
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
+                                {(filters.min_price || filters.max_price) && (
+                                    <span className="shop-filter-tag">
+                                        ৳{Number(filters.min_price ?? catalogMeta.price_min ?? 0).toLocaleString('en-BD')}
+                                        {' – '}
+                                        ৳{Number(filters.max_price ?? catalogMeta.price_max ?? 0).toLocaleString('en-BD')}
+                                        <button type="button" onClick={clearPrice} aria-label="Remove price filter">
                                             <X size={12} />
                                         </button>
                                     </span>
@@ -127,7 +145,7 @@ export default function ProductsIndex({
                                     <input
                                         name="search"
                                         defaultValue={filters.search || ''}
-                                        placeholder="Search in catalog…"
+                                        placeholder={t('shop.search_in_catalog')}
                                         className="input-premium flex-1 min-w-0 py-2 text-sm"
                                     />
                                 </form>
@@ -136,7 +154,7 @@ export default function ProductsIndex({
                                     onClick={() => setMobileFilters(true)}
                                     className="lg:hidden flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-medium bg-white dark:bg-slate-800"
                                 >
-                                    <SlidersHorizontal size={16} /> Filters
+                                    <SlidersHorizontal size={16} /> {t('shop.filters')}
                                 </button>
                                 <select
                                     value={filters.sort || ''}
@@ -145,7 +163,7 @@ export default function ProductsIndex({
                                     aria-label="Sort products"
                                 >
                                     {sortOptions.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>Sort by: {opt.label}</option>
+                                        <option key={opt.value} value={opt.value}>{t('shop.sort_by')}: {opt.label}</option>
                                     ))}
                                 </select>
                             </div>
@@ -172,11 +190,11 @@ export default function ProductsIndex({
                         ) : (
                             <EmptyState
                                 icon={Package}
-                                title="No products found"
-                                description="Try another search, category, or filter."
+                                title={t('shop.no_products')}
+                                description={t('shop.no_products_hint')}
                                 action={
                                     <button type="button" onClick={clearFilters} className="text-primary font-semibold text-sm hover:underline">
-                                        Clear filters
+                                        {t('shop.clear_filters')}
                                     </button>
                                 }
                             />
@@ -192,7 +210,7 @@ export default function ProductsIndex({
                     <button type="button" className="absolute inset-0 bg-black/40" onClick={() => setMobileFilters(false)} aria-label="Close filters" />
                     <aside className="absolute left-0 top-0 h-full w-[min(100%,22rem)] bg-slate-50 dark:bg-slate-900 shadow-2xl p-5 flex flex-col overflow-y-auto">
                         <div className="flex items-center justify-between mb-4">
-                            <p className="font-bold text-slate-900 dark:text-white">Filters</p>
+                            <p className="font-bold text-slate-900 dark:text-white">{t('shop.filters')}</p>
                             <button type="button" onClick={() => setMobileFilters(false)} className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700">
                                 <X size={20} />
                             </button>

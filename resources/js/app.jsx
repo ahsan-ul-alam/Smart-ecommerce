@@ -14,6 +14,12 @@ createInertiaApp({
         resolvePageComponent(`./Pages/${name}.jsx`, import.meta.glob('./Pages/**/*.jsx')),
     setup({ el, App, props }) {
         const initialTheme = props.initialPage?.props?.theme ?? {};
+        const serverLocale = props.initialPage?.props?.app?.locale;
+
+        if (serverLocale && i18n.language !== serverLocale) {
+            i18n.changeLanguage(serverLocale);
+            localStorage.setItem('locale', serverLocale);
+        }
 
         createRoot(el).render(
             <I18nextProvider i18n={i18n}>

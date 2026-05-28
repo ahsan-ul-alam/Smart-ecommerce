@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import { Heart, ShoppingCart, Star, Eye } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
@@ -21,6 +22,7 @@ export default function ProductCard({
     className,
     wishlisted: wishlistedProp = false,
 }) {
+    const { t } = useTranslation();
     const { auth } = usePage().props;
     const [adding, setAdding] = useState(false);
     const [wishlisted, setWishlisted] = useState(wishlistedProp);
@@ -193,7 +195,7 @@ export default function ProductCard({
                     )}
                 >
                     <ShoppingCart size={catalog ? 15 : 16} />
-                    {adding ? 'Adding…' : 'Add to cart'}
+                    {adding ? t('home.adding') : t('shop.add_to_cart')}
                 </button>
             </div>
         </article>

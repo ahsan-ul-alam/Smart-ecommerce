@@ -7,6 +7,11 @@ return [
     'default_locale' => env('APP_LOCALE', 'en'),
     'supported_locales' => ['en', 'bn'],
 
+    'locale_labels' => [
+        'en' => ['label' => 'English', 'native' => 'English'],
+        'bn' => ['label' => 'Bengali', 'native' => 'বাংলা'],
+    ],
+
     'roles' => [
         'super_admin',
         'admin',

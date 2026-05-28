@@ -1,19 +1,21 @@
 import { Link, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, Package, MapPin, ShoppingBag, Gift } from 'lucide-react';
 import ShopLayout from './ShopLayout';
 import clsx from 'clsx';
 
 export default function AccountLayout({ children, title }) {
+    const { t } = useTranslation();
     const { url, modules = [] } = usePage().props;
 
     const links = [
-        { href: '/account', icon: LayoutDashboard, label: 'Overview', exact: true },
-        { href: '/account/orders', icon: Package, label: 'My Orders' },
+        { href: '/account', icon: LayoutDashboard, label: t('account.overview'), exact: true },
+        { href: '/account/orders', icon: Package, label: t('account.my_orders') },
         ...(modules.includes('loyalty') || modules.includes('wallet')
-            ? [{ href: '/account/rewards', icon: Gift, label: 'Points & Wallet' }]
+            ? [{ href: '/account/rewards', icon: Gift, label: t('account.rewards') }]
             : []),
-        { href: '/account/addresses', icon: MapPin, label: 'Addresses' },
-        { href: '/shop/products', icon: ShoppingBag, label: 'Continue Shopping' },
+        { href: '/account/addresses', icon: MapPin, label: t('account.addresses') },
+        { href: '/shop/products', icon: ShoppingBag, label: t('shop.continue_shopping') },
     ];
 
     return (

@@ -38,7 +38,15 @@ class HandleInertiaRequests extends Middleware
                     'currency' => $b['currency'],
                     'currency_symbol' => $b['currency_symbol'],
                     'locale' => app()->getLocale(),
-                    'locales' => config('arcommerze.supported_locales'),
+                    'locales' => collect(config('arcommerze.supported_locales', ['en']))
+                        ->map(fn (string $code) => [
+                            'code' => $code,
+                            'label' => config("arcommerze.locale_labels.{$code}.native")
+                                ?? config("arcommerze.locale_labels.{$code}.label")
+                                ?? strtoupper($code),
+                        ])
+                        ->values()
+                        ->all(),
                 ];
             },
             'auth' => [

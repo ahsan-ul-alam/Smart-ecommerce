@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import ShopLayout from '../../Layouts/ShopLayout';
 import HomeHeroSlider from '../../Components/Shop/Home/HomeHeroSlider';
 import HomeFlashSale from '../../Components/Shop/Home/HomeFlashSale';
@@ -24,6 +25,8 @@ export default function Home({
     reviews = [],
     wishlistProductIds = [],
 }) {
+    const { t } = useTranslation();
+
     return (
         <ShopLayout fullWidth>
             <HomeHeroSlider slides={heroSlides} />
@@ -37,8 +40,8 @@ export default function Home({
             <HomeCategoryGrid categories={categories} />
 
             <HomeProductSection
-                title="Featured products"
-                subtitle="Hand-picked deals for you"
+                title={t('home.featured_products')}
+                subtitle={t('home.featured_sub')}
                 viewAllHref="/shop/products?featured=1"
                 products={featured}
                 wishlistProductIds={wishlistProductIds}
@@ -47,22 +50,22 @@ export default function Home({
             <HomeCampaignBanners banners={campaignBanners} />
 
             <HomeProductSection
-                title="Trending now"
-                subtitle="Popular picks this week"
+                title={t('home.trending')}
+                subtitle={t('home.trending_sub')}
                 products={trending}
                 wishlistProductIds={wishlistProductIds}
             />
 
             <HomeProductSection
-                title="Best selling"
-                subtitle="Top orders from our customers"
+                title={t('home.best_selling')}
+                subtitle={t('home.best_selling_sub')}
                 products={bestSelling}
                 wishlistProductIds={wishlistProductIds}
             />
 
             <HomeProductSection
-                title="New arrivals"
-                subtitle="Fresh products just landed"
+                title={t('home.new_arrivals')}
+                subtitle={t('home.new_arrivals_sub')}
                 viewAllHref="/shop/products"
                 products={newArrivals}
                 wishlistProductIds={wishlistProductIds}
@@ -70,8 +73,8 @@ export default function Home({
 
             {recentlyViewed.length > 0 && (
                 <HomeProductSection
-                    title="Recently viewed"
-                    subtitle="Continue where you left off"
+                    title={t('home.recently_viewed')}
+                    subtitle={t('home.recently_viewed_sub')}
                     viewAllHref="/shop/products"
                     products={recentlyViewed}
                     wishlistProductIds={wishlistProductIds}

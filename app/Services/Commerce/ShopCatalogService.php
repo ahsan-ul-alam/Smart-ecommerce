@@ -27,8 +27,21 @@ class ShopCatalogService
             ->when($request->category, fn ($q, $c) => $q->where('category_id', $c))
             ->when($request->brand, fn ($q, $b) => $q->where('brand_id', $b))
             ->when($request->featured, fn ($q) => $q->where('is_featured', true))
-            ->when($request->filled('min_price'), fn ($q) => $q->where('price', '>=', (float) $request->min_price))
-            ->when($request->filled('max_price'), fn ($q) => $q->where('price', '<=', (float) $request->max_price))
+            ->when($request->filled('min_price') || $request->filled('max_price'), function ($q) use ($request) {
+                $min = $request->filled('min_price') ? (float) $request->min_price : null;
+                $max = $request->filled('max_price') ? (float) $request->max_price : null;
+
+                if ($min !== null && $max !== null && $min > $max) {
+                    [$min, $max] = [$max, $min];
+                }
+
+                if ($min !== null) {
+                    $q->where('price', '>=', $min);
+                }
+                if ($max !== null) {
+                    $q->where('price', '<=', $max);
+                }
+            })
             ->when($request->filled('rating'), function ($q) use ($request) {
                 $min = (int) $request->rating;
                 $q->whereRaw(
