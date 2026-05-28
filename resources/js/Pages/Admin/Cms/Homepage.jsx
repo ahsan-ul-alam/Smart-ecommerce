@@ -1,6 +1,6 @@
 import { useForm, router } from '@inertiajs/react';
-import { useState } from 'react';
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
 import Input from '../../../Components/UI/Input';
@@ -17,7 +17,45 @@ const empty = {
 
 export default function Homepage({ sections, sectionTypes }) {
     const [editing, setEditing] = useState(null);
+    const [ordered, setOrdered] = useState(sections);
+    const [dragId, setDragId] = useState(null);
     const form = useForm(empty);
+
+    useEffect(() => {
+        setOrdered(sections);
+    }, [sections]);
+
+    const saveOrder = (list) => {
+        router.patch('/admin/cms/homepage/reorder', { order: list.map((s) => s.id) }, { preserveScroll: true });
+    };
+
+    const moveSection = (index, direction) => {
+        const next = [...ordered];
+        const target = index + direction;
+        if (target < 0 || target >= next.length) return;
+        [next[index], next[target]] = [next[target], next[index]];
+        setOrdered(next);
+        saveOrder(next);
+    };
+
+    const onDragStart = (id) => setDragId(id);
+
+    const onDragOver = (e, overId) => {
+        e.preventDefault();
+        if (dragId === null || dragId === overId) return;
+        const from = ordered.findIndex((s) => s.id === dragId);
+        const to = ordered.findIndex((s) => s.id === overId);
+        if (from < 0 || to < 0 || from === to) return;
+        const next = [...ordered];
+        const [item] = next.splice(from, 1);
+        next.splice(to, 0, item);
+        setOrdered(next);
+    };
+
+    const onDragEnd = () => {
+        if (dragId !== null) saveOrder(ordered);
+        setDragId(null);
+    };
 
     const openCreate = () => { setEditing('new'); form.reset(); form.setData(empty); };
     const openEdit = (s) => {
@@ -34,7 +72,7 @@ export default function Homepage({ sections, sectionTypes }) {
     return (
         <AdminLayout title="Homepage Builder">
             <FlashMessage />
-            <p className="text-sm text-slate-500 mb-4">Control hero, trust badges, featured products, and promo blocks on the storefront homepage.</p>
+            <p className="text-sm text-slate-500 mb-4">Drag sections to reorder, or use arrows. Changes save automatically.</p>
 
             <div className="flex justify-end mb-4">
                 <Button onClick={openCreate}><Plus size={16} /> Add section</Button>
@@ -81,16 +119,26 @@ export default function Homepage({ sections, sectionTypes }) {
 
             <Card>
                 <CardBody className="p-0 divide-y">
-                    {sections.map((s, index) => (
-                        <div key={s.id} className="flex items-center justify-between px-6 py-4">
-                            <div>
-                                <p className="font-medium">{s.title || s.type}</p>
-                                <p className="text-xs text-slate-400">{s.type} · order {s.sort_order}</p>
+                    {ordered.map((s, index) => (
+                        <div
+                            key={s.id}
+                            draggable
+                            onDragStart={() => onDragStart(s.id)}
+                            onDragOver={(e) => onDragOver(e, s.id)}
+                            onDragEnd={onDragEnd}
+                            className={`flex items-center justify-between px-6 py-4 ${dragId === s.id ? 'bg-teal-50 dark:bg-teal-900/20' : ''}`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <GripVertical size={18} className="text-slate-400 cursor-grab shrink-0" />
+                                <div>
+                                    <p className="font-medium">{s.title || s.type}</p>
+                                    <p className="text-xs text-slate-400">{s.type} · position {index + 1}</p>
+                                </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="flex flex-col">
                                     <button type="button" disabled={index === 0} onClick={() => moveSection(index, -1)} className="p-1 text-slate-400 hover:text-teal-700 disabled:opacity-30"><ChevronUp size={16} /></button>
-                                    <button type="button" disabled={index === sections.length - 1} onClick={() => moveSection(index, 1)} className="p-1 text-slate-400 hover:text-teal-700 disabled:opacity-30"><ChevronDown size={16} /></button>
+                                    <button type="button" disabled={index === ordered.length - 1} onClick={() => moveSection(index, 1)} className="p-1 text-slate-400 hover:text-teal-700 disabled:opacity-30"><ChevronDown size={16} /></button>
                                 </div>
                                 <Badge variant={s.is_active ? 'success' : 'default'}>{s.is_active ? 'Active' : 'Off'}</Badge>
                                 <button type="button" onClick={() => openEdit(s)} className="p-2 text-slate-400 hover:text-teal-700"><Pencil size={16} /></button>
