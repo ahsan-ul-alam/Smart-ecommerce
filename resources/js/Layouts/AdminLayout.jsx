@@ -24,6 +24,7 @@ const navItems = [
     { href: '/admin/vendors', icon: Users, label: 'Vendors', permission: 'products.manage', module: 'vendor' },
     { href: '/admin/customers', icon: Users, label: 'nav.customers', permission: 'customers.manage' },
     { href: '/admin/newsletter', icon: Users, label: 'Newsletter', permission: 'customers.manage' },
+    { href: '/admin/contact-inquiries', icon: Users, label: 'Contact', permission: 'customers.manage' },
     { href: '/admin/staff', icon: Users, label: 'Staff', permission: 'users.manage' },
     { href: '/admin/settings/general', icon: Settings, label: 'nav.settings', permission: 'settings.manage' },
 ];

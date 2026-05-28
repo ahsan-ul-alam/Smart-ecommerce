@@ -31,6 +31,7 @@ export default function ShopLayout({ children }) {
                         <Link href="/shop/products?featured=1" className="hover:text-teal-700">Featured</Link>
                         <Link href="/shop/flash-sales" className="hover:text-teal-700 text-amber-700 dark:text-amber-400 font-semibold">Flash Sale</Link>
                         <Link href="/shop/faq" className="hover:text-teal-700">FAQ</Link>
+                        <Link href="/shop/contact" className="hover:text-teal-700">Contact</Link>
                         {modules.includes('blog') && (
                             <Link href="/shop/blog" className="hover:text-teal-700">Blog</Link>
                         )}
@@ -101,6 +102,9 @@ export default function ShopLayout({ children }) {
                         {newsletter.errors.email && (
                             <p className="text-xs text-red-600 mt-1">{newsletter.errors.email}</p>
                         )}
+                        <p className="text-xs text-slate-400 mt-2">
+                            <Link href="/newsletter/unsubscribe" className="hover:text-teal-700">Unsubscribe</Link>
+                        </p>
                     </form>
                 </div>
             </footer>

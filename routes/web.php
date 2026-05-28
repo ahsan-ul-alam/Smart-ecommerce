@@ -48,6 +48,8 @@ use App\Http\Controllers\Shop\WishlistController;
 use App\Http\Controllers\Shop\NewsletterController as ShopNewsletterController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Admin\NewsletterController;
+use App\Http\Controllers\Admin\ContactInquiryController;
+use App\Http\Controllers\Shop\ContactController as ShopContactController;
 use App\Models\Banner;
 use App\Models\HomepageSection;
 use App\Models\Product;
@@ -94,6 +96,8 @@ Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap')
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 Route::post('/newsletter/subscribe', [ShopNewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::get('/newsletter/unsubscribe', [ShopNewsletterController::class, 'unsubscribeForm'])->name('newsletter.unsubscribe');
+Route::post('/newsletter/unsubscribe', [ShopNewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe.store');
 
 Route::get('/pages/{slug}', [ShopPageController::class, 'show'])->name('pages.show');
 
@@ -101,6 +105,9 @@ Route::prefix('shop')->name('shop.')->group(function () {
     Route::get('/products', [ShopProductController::class, 'index'])->name('products.index');
     Route::get('/products/{slug}', [ShopProductController::class, 'show'])->name('products.show');
     Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->middleware('auth')->name('products.reviews');
+
+    Route::get('/contact', [ShopContactController::class, 'index'])->name('contact');
+    Route::post('/contact', [ShopContactController::class, 'store'])->name('contact.store');
 
     Route::get('/faq', [\App\Http\Controllers\Shop\FaqController::class, 'index'])->name('faq');
     Route::get('/flash-sales', [ShopFlashSaleController::class, 'index'])->name('flash-sales.index');
@@ -184,6 +191,10 @@ Route::prefix('account')->middleware(['auth'])->name('account.')->group(function
 Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+
+    Route::get('contact-inquiries', [ContactInquiryController::class, 'index'])->name('contact-inquiries.index');
+    Route::patch('contact-inquiries/{inquiry}', [ContactInquiryController::class, 'update'])->name('contact-inquiries.update');
+    Route::delete('contact-inquiries/{inquiry}', [ContactInquiryController::class, 'destroy'])->name('contact-inquiries.destroy');
 
     Route::get('newsletter', [NewsletterController::class, 'index'])->name('newsletter.index');
     Route::get('newsletter/export', [NewsletterController::class, 'export'])->name('newsletter.export');

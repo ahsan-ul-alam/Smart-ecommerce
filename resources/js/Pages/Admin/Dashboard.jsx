@@ -74,8 +74,12 @@ export default function Dashboard({ stats, recentOrders = [] }) {
                     <CardBody className="space-y-3">
                         {[
                             ['Pending Orders', stats.pending_orders, '/admin/orders?status=pending'],
+                            ['Return Requests', stats.pending_returns ?? 0, '/admin/return-requests'],
+                            ['Pending Reviews', stats.pending_reviews ?? 0, '/admin/reviews'],
+                            ['New Contact Messages', stats.new_contact_messages ?? 0, '/admin/contact-inquiries?status=new'],
                             ['Low Stock Products', stats.low_stock_products, '/admin/inventory'],
                             ['Abandoned Carts', stats.abandoned_carts, '/admin/abandoned-carts'],
+                            ['Newsletter Subscribers', stats.newsletter_subscribers ?? 0, '/admin/newsletter'],
                             ['Total Orders', stats.total_orders ?? 0, '/admin/orders'],
                         ].map(([label, value, href]) => (
                             <div key={label} className="flex justify-between text-sm">

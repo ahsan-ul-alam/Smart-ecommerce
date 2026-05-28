@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
+use App\Models\ContactInquiry;
+use App\Models\NewsletterSubscriber;
 use App\Models\Order;
+use App\Models\OrderReturnRequest;
+use App\Models\ProductReview;
 use App\Models\User;
+use App\Domain\Enums\ReturnRequestStatus;
 use App\Repositories\ProductRepository;
 use App\Services\Commerce\OrderService;
 use App\Services\Reports\ReportService;
@@ -39,6 +44,12 @@ class DashboardController extends Controller
                     ->whereNotIn('status', ['cancelled', 'refunded'])
                     ->where('created_at', '>=', now()->startOfMonth())
                     ->sum('total'),
+                'pending_returns' => OrderReturnRequest::query()
+                    ->where('status', ReturnRequestStatus::Pending)
+                    ->count(),
+                'pending_reviews' => ProductReview::query()->where('is_approved', false)->count(),
+                'new_contact_messages' => ContactInquiry::query()->where('status', 'new')->count(),
+                'newsletter_subscribers' => NewsletterSubscriber::query()->active()->count(),
             ],
             'recentOrders' => $this->reports->recentOrders(6),
         ]);
