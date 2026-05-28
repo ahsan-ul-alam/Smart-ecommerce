@@ -80,7 +80,8 @@ Set `GOOGLE_CLIENT_ID` / `FACEBOOK_CLIENT_ID` in `.env`. Login page includes Goo
 | Area | Path |
 |------|------|
 | Dashboard | `/admin` |
-| Products / categories / brands | `/admin/products` |
+| Products (CSV import/export) | `/admin/products` |
+| Audit logs | `/admin/audit-logs` |
 | Orders + CSV export | `/admin/orders` |
 | POS | `/admin/pos` |
 | Reports | `/admin/reports` |
