@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\SpecialProduct;
 use App\Services\Builder\BuilderCatalogService;
 use App\Services\Builder\LandingPageBuilderService;
+use App\Services\Commerce\PaymentService;
+use App\Services\Geo\BangladeshLocationService;
 use App\Support\MediaUrl;
 use App\Http\Controllers\Shop\SpecialProductController as ShopSpecialProductController;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +24,8 @@ class SpecialProductController extends Controller
     public function __construct(
         protected LandingPageBuilderService $builder,
         protected BuilderCatalogService $catalog,
+        protected BangladeshLocationService $locations,
+        protected PaymentService $payments,
     ) {}
 
     public function index(): Response
@@ -70,6 +74,10 @@ class SpecialProductController extends Controller
             'products' => Product::query()->published()->orderBy('name')->limit(200)->get(['id', 'name', 'slug']),
             'catalog' => $this->catalog->editorPayload(),
             'versions' => $specialProduct->versions()->limit(15)->get(['id', 'version_number', 'type', 'created_at']),
+            'checkoutPreview' => [
+                'divisions' => $this->locations->divisions(),
+                'paymentMethods' => $this->payments->enabledPaymentMethods()->values()->all(),
+            ],
         ]);
     }
 

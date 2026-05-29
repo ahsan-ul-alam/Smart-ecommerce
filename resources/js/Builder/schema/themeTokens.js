@@ -7,6 +7,7 @@ export const DEFAULT_THEME = {
     page_background: '#ffffff',
     text_color: '#0f172a',
     background_style: 'plain',
+    content_max_width: 'xl',
 };
 
 /** Inspired by popular BD direct-response landing pages */

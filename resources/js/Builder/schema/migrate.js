@@ -60,13 +60,47 @@ function legacyProps(block) {
 }
 
 export function normalizeSchema(schema, theme = {}) {
+    let roots = [];
+    let mergedTheme = mergeTheme({ ...theme, ...schema?.theme });
+
     if (schema?.roots?.length) {
-        return { version: 2, theme: mergeTheme({ ...theme, ...schema.theme }), roots: schema.roots };
+        roots = schema.roots;
+    } else if (schema?.blocks?.length) {
+        return blocksToSchema(schema.blocks, mergedTheme);
+    } else {
+        return kafelaMartTemplate();
     }
-    if (schema?.blocks?.length) {
-        return blocksToSchema(schema.blocks, theme);
-    }
-    return kafelaMartTemplate();
+
+    migrateLegacyLayout(roots);
+
+    return { version: 2, theme: mergedTheme, roots };
+}
+
+/** Move legacy section paddingY props into editable style.padding. */
+export function migrateLegacyLayout(nodes) {
+    if (!Array.isArray(nodes)) return;
+
+    walkNodes(nodes, (node) => {
+        if (node.type !== 'section' || !node.props?.paddingY) return;
+
+        const py = node.props.paddingY;
+        const padding = py === 'lg' ? '3rem 0' : py === 'sm' ? '1rem 0' : py === 'none' ? '' : '2rem 0';
+        if (padding && !node.style?.desktop?.padding) {
+            node.style = {
+                ...node.style,
+                desktop: { ...(node.style?.desktop || {}), padding },
+            };
+        }
+        const { paddingY, ...rest } = node.props;
+        node.props = rest;
+    });
+}
+
+function walkNodes(nodes, visitor) {
+    nodes.forEach((node) => {
+        visitor(node);
+        if (node.children?.length) walkNodes(node.children, visitor);
+    });
 }
 
 export function ensureNodeIds(nodes) {

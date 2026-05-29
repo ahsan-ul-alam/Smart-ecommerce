@@ -19,7 +19,12 @@ export default function SpecialProduct({ page, product, checkout, catalog = {} }
         initialTotals: checkout?.initialTotals ?? {},
     };
 
-    const scrollToCheckout = () => document.getElementById('offer-checkout')?.scrollIntoView({ behavior: 'smooth' });
+    const scrollToCheckout = () => {
+        const el = document.getElementById('offer-checkout');
+        if (!el) return;
+        const top = el.getBoundingClientRect().top + window.scrollY - 88;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    };
 
     return (
         <OfferLayout page={page} theme={theme}>

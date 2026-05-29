@@ -21,7 +21,7 @@ import { getCanvasBlocks, parseInsertDropId } from '../utils/builderTree';
 import { getComponentIcon } from '../registry/icons';
 
 export default function LandingPageBuilder({
-    page, catalog, product, onSave, saving, pageSettings, backHref,
+    page, catalog, product, onSave, saving, pageSettings, backHref, checkoutPreview,
 }) {
     const init = useBuilderStore((s) => s.init);
     const addComponent = useBuilderStore((s) => s.addComponent);
@@ -136,7 +136,7 @@ export default function LandingPageBuilder({
                     <div role="separator" onMouseDown={(e) => left.onMouseDown(e, 1)} className="w-1 shrink-0 cursor-col-resize hover:bg-[var(--offer-primary)]/30 bg-transparent" title="Resize panel" />
 
                     <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-slate-200/60 dark:bg-slate-900/40" onClick={() => select(null)}>
-                        <CanvasEditor catalog={catalog} product={product} dragActive={!!dragging} />
+                        <CanvasEditor catalog={catalog} product={product} page={page} checkoutPreview={checkoutPreview} dragActive={!!dragging} />
                     </main>
 
                     <div role="separator" onMouseDown={(e) => right.onMouseDown(e, -1)} className="w-1 shrink-0 cursor-col-resize hover:bg-[var(--offer-primary)]/30 bg-transparent" title="Resize panel" />

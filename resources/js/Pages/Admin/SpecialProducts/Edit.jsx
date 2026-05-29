@@ -10,7 +10,7 @@ import LandingPageBuilder from '../../../Builder/editor/LandingPageBuilder';
 import { useBuilderStore } from '../../../Builder/store/builderStore';
 import { stripEditorMeta, collectMediaFiles } from '../../../Builder/schema/defaults';
 
-export default function SpecialProductsEdit({ page, products, catalog, versions = [] }) {
+export default function SpecialProductsEdit({ page, products, catalog, versions = [], checkoutPreview = {} }) {
     const form = useForm({
         name: page.name,
         slug: page.slug,
@@ -110,6 +110,7 @@ export default function SpecialProductsEdit({ page, products, catalog, versions 
                 saving={form.processing}
                 pageSettings={pageSettings}
                 backHref="/admin/special-products"
+                checkoutPreview={checkoutPreview}
             />
         </AdminLayout>
     );

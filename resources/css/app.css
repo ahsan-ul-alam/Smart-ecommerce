@@ -677,7 +677,7 @@
     }
 
     .offer-checkout-card {
-        @apply rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-lg shadow-slate-200/50;
+        @apply w-full;
     }
 
     .shop-catalog-toolbar {

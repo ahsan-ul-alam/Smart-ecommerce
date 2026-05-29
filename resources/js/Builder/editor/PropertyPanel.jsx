@@ -164,6 +164,8 @@ function renderContentFields(node, p, setProp, catalog) {
                 <>
                     <Input label="Title" value={p.title || ''} onChange={(e) => setProp('title', e.target.value)} />
                     <Input label="Subtitle" value={p.subtitle || ''} onChange={(e) => setProp('subtitle', e.target.value)} />
+                    <Input label="Support phone" value={p.supportPhone || ''} onChange={(e) => setProp('supportPhone', e.target.value)} placeholder="01773766658" />
+                    <Input label="Support hours" value={p.supportHours || ''} onChange={(e) => setProp('supportHours', e.target.value)} placeholder="9AM – 10PM" />
                 </>
             );
         case 'countdown':
@@ -173,9 +175,25 @@ function renderContentFields(node, p, setProp, catalog) {
                     <Input label="Label" value={p.label || ''} onChange={(e) => setProp('label', e.target.value)} />
                 </>
             );
+        case 'container':
+            return (
+                <Select
+                    label="Max width"
+                    value={p.maxWidth || ''}
+                    onChange={(e) => setProp('maxWidth', e.target.value || undefined)}
+                    options={[
+                        { value: '', label: 'Use page default' },
+                        { value: 'sm', label: '640px' },
+                        { value: 'md', label: '768px' },
+                        { value: 'lg', label: '1024px' },
+                        { value: 'xl', label: '1280px' },
+                        { value: 'full', label: 'Full width' },
+                    ]}
+                />
+            );
         default:
             if (LAYOUT_TYPES.includes(node.type)) {
-                return <p className="text-xs text-slate-500">Layout block — use widgets to add content blocks to the page.</p>;
+                return <p className="text-xs text-slate-500">Layout block — spacing is controlled in the Style tab (padding & margin).</p>;
             }
             return null;
     }

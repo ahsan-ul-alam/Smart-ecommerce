@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
 import { Copy, GripVertical, Trash2 } from 'lucide-react';
+import clsx from 'clsx';
 import { NodeRenderer } from '../engine/PageRenderer';
 import { COMPONENT_LABELS } from '../registry/components';
 import { getComponentIcon } from '../registry/icons';
@@ -10,14 +12,27 @@ import { getCanvasBlocks } from '../utils/builderTree';
 import { DEVICE_WIDTH } from '../schema/defaults';
 import { themeToCssVars, pageBackgroundStyle } from '../schema/themeTokens';
 import InsertDropZone from './InsertDropZone';
+import { buildCheckoutPreview } from '../utils/checkoutPreview';
 
-export default function CanvasEditor({ catalog, product, dragActive }) {
+export default function CanvasEditor({ catalog, product, page, checkoutPreview, dragActive }) {
     const roots = useBuilderStore((s) => s.roots);
     const theme = useBuilderStore((s) => s.theme);
     const breakpoint = useBuilderStore((s) => s.breakpoint);
     const blocks = getCanvasBlocks(roots);
     const ids = blocks.map((b) => b.id);
     const cssVars = themeToCssVars(theme);
+    const contentMaxWidth = theme.content_max_width || 'xl';
+    const checkout = buildCheckoutPreview(page, product, checkoutPreview);
+    const selectedIds = useBuilderStore((s) => s.selectedIds);
+
+    useEffect(() => {
+        const id = selectedIds[0];
+        if (!id) return;
+        const block = blocks.find((b) => b.id === id);
+        if (block?.type !== 'checkout') return;
+        const el = document.getElementById(`builder-block-${id}`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, [selectedIds, blocks]);
 
     const { setNodeRef: setCanvasRef, isOver: canvasOver } = useDroppable({
         id: 'canvas-drop',
@@ -25,9 +40,9 @@ export default function CanvasEditor({ catalog, product, dragActive }) {
     });
 
     return (
-        <div className="flex-1 overflow-auto p-6" style={{ ...cssVars, background: pageBackgroundStyle(theme) }}>
+        <div className="flex-1 overflow-auto p-2" style={{ ...cssVars, background: pageBackgroundStyle(theme) }}>
             <div
-                className="mx-auto transition-all duration-300 rounded-xl shadow-lg border border-slate-200/80 overflow-hidden bg-[var(--offer-bg)]"
+                className="mx-auto transition-all duration-300 rounded-xl shadow-lg border border-slate-200/80 bg-[var(--offer-bg)]"
                 style={{ maxWidth: DEVICE_WIDTH[breakpoint] || '100%', width: '100%' }}
             >
                 <div ref={setCanvasRef} className={`min-h-[480px] p-4 ${canvasOver && !blocks.length ? 'ring-2 ring-[var(--offer-primary)] ring-dashed' : ''}`}>
@@ -43,8 +58,10 @@ export default function CanvasEditor({ catalog, product, dragActive }) {
                                     index={index}
                                     catalog={catalog}
                                     product={product}
+                                    checkout={checkout}
                                     theme={theme}
                                     breakpoint={breakpoint}
+                                    contentMaxWidth={contentMaxWidth}
                                     dragActive={dragActive}
                                 />
                             ))}
@@ -66,7 +83,7 @@ function EmptyCanvas({ dragActive }) {
     );
 }
 
-function CanvasBlock({ block, index, catalog, product, theme, breakpoint, dragActive }) {
+function CanvasBlock({ block, index, catalog, product, checkout, theme, breakpoint, contentMaxWidth, dragActive }) {
     const selectedIds = useBuilderStore((s) => s.selectedIds);
     const select = useBuilderStore((s) => s.select);
     const duplicateNode = useBuilderStore((s) => s.duplicateNode);
@@ -89,6 +106,7 @@ function CanvasBlock({ block, index, catalog, product, theme, breakpoint, dragAc
         <>
             <div
                 ref={setNodeRef}
+                id={`builder-block-${block.id}`}
                 style={style}
                 className={`group relative mb-1 rounded-xl transition-shadow ${selected ? 'ring-2 ring-[var(--offer-primary)] shadow-md' : 'hover:ring-1 hover:ring-slate-300'} ${isDragging ? 'opacity-60' : ''}`}
                 onClick={(e) => { e.stopPropagation(); select(block.id); }}
@@ -109,14 +127,20 @@ function CanvasBlock({ block, index, catalog, product, theme, breakpoint, dragAc
                         <Trash2 size={13} />
                     </button>
                 </div>
-                <div className="border border-t-0 border-slate-200 rounded-b-xl bg-white overflow-hidden pointer-events-none">
-                    <div className="p-3 sm:p-4">
+                <div className={clsx(
+                    'border border-t-0 border-slate-200 rounded-b-xl bg-white',
+                    block.type === 'checkout' ? 'overflow-visible' : 'overflow-hidden pointer-events-none',
+                )}>
+                    <div className={block.type === 'checkout' ? 'p-3 sm:p-4 min-w-0 overflow-visible' : 'p-3 sm:p-4 pointer-events-none'}>
                         <NodeRenderer
                             node={block}
                             breakpoint={breakpoint}
                             catalog={catalog}
                             product={product}
+                            checkout={checkout}
                             editorMode={false}
+                            builderPreview
+                            contentMaxWidth={contentMaxWidth}
                         />
                     </div>
                 </div>

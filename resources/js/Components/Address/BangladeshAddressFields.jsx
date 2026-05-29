@@ -7,7 +7,14 @@ import Textarea from '../UI/Textarea';
 /**
  * Cascading Division → District → Thana (upazila) + local address.
  */
-export default function BangladeshAddressFields({ data, setData, errors = {}, divisions = [] }) {
+export default function BangladeshAddressFields({
+    data,
+    setData,
+    errors = {},
+    divisions = [],
+    layout = 'stack',
+    disabled = false,
+}) {
     const [districtOptions, setDistrictOptions] = useState([]);
     const [thanaOptions, setThanaOptions] = useState([]);
 
@@ -52,6 +59,59 @@ export default function BangladeshAddressFields({ data, setData, errors = {}, di
         });
     };
 
+    const locationGrid = layout === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Select
+                label="Division"
+                value={data.division || ''}
+                onChange={onDivisionChange}
+                options={divisions}
+                placeholder="Select division"
+                error={errors.division}
+                disabled={disabled}
+                required
+            />
+            <Select
+                label="District"
+                value={data.district || ''}
+                onChange={onDistrictChange}
+                options={districtOptions}
+                placeholder={data.division ? 'Select district' : 'Select division first'}
+                error={errors.district}
+                disabled={disabled || !data.division}
+                required
+            />
+            <Select
+                label="Upazila / Thana"
+                value={data.thana || ''}
+                onChange={(e) => setData({ ...data, thana: e.target.value })}
+                options={thanaOptions}
+                placeholder={data.district ? 'Select upazila' : 'Select district first'}
+                error={errors.thana}
+                disabled={disabled || !data.district}
+                required
+            />
+        </div>
+    ) : null;
+
+    if (layout === 'grid') {
+        return (
+            <div className="space-y-4">
+                {locationGrid}
+                <Textarea
+                    label="Full address"
+                    rows={3}
+                    value={data.local_address || ''}
+                    onChange={(e) => setData({ ...data, local_address: e.target.value })}
+                    error={errors.local_address}
+                    placeholder="House / road / area, landmark"
+                    disabled={disabled}
+                    required
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-4">
             <Select
@@ -61,6 +121,7 @@ export default function BangladeshAddressFields({ data, setData, errors = {}, di
                 options={divisions}
                 placeholder="Select division"
                 error={errors.division}
+                disabled={disabled}
             />
             <Select
                 label="District"
@@ -69,7 +130,7 @@ export default function BangladeshAddressFields({ data, setData, errors = {}, di
                 options={districtOptions}
                 placeholder={data.division ? 'Select district' : 'Select division first'}
                 error={errors.district}
-                disabled={!data.division}
+                disabled={disabled || !data.division}
             />
             <Select
                 label="Thana / Upazila"
@@ -78,7 +139,7 @@ export default function BangladeshAddressFields({ data, setData, errors = {}, di
                 options={thanaOptions}
                 placeholder={data.district ? 'Select thana' : 'Select district first'}
                 error={errors.thana}
-                disabled={!data.district}
+                disabled={disabled || !data.district}
             />
             <Textarea
                 label="Local address"
@@ -87,6 +148,7 @@ export default function BangladeshAddressFields({ data, setData, errors = {}, di
                 onChange={(e) => setData({ ...data, local_address: e.target.value })}
                 error={errors.local_address}
                 placeholder="House / road / area, landmark (e.g. House 12, Road 5, Block B)"
+                disabled={disabled}
             />
         </div>
     );

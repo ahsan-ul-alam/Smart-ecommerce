@@ -1,6 +1,7 @@
 import { memo, useMemo, useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { resolveStyle, styleToCss } from '../schema/defaults';
+import { migrateLegacyLayout } from '../schema/migrate';
 import { themeToCssVars, builderSelectionClass } from '../schema/themeTokens';
 import { mediaUrl } from '../../utils/mediaUrl';
 import ProductCard from '../../Components/Shop/ProductCard';
@@ -10,13 +11,18 @@ import OfferCheckoutForm from '../../Components/SpecialProduct/OfferCheckoutForm
 
 const MAX_WIDTH = { sm: '640px', md: '768px', lg: '1024px', xl: '1280px', full: '100%' };
 
+function resolveContainerMaxWidth(containerProp, pageMaxWidth = 'xl') {
+    const key = containerProp || pageMaxWidth || 'xl';
+    return MAX_WIDTH[key] || MAX_WIDTH.xl;
+}
+
 function animationClass(animation) {
     if (!animation || animation.type === 'none') return '';
     return `builder-anim builder-anim-${animation.type}`;
 }
 
 const NodeRenderer = memo(function NodeRenderer({
-    node, breakpoint, catalog, product, checkout, onAction, editorMode, selectedIds, onSelect,
+    node, breakpoint, catalog, product, checkout, onAction, editorMode, builderPreview = false, contentMaxWidth = 'xl', selectedIds, onSelect,
 }) {
     const style = resolveStyle(node, breakpoint);
     if (style.display === 'none') return null;
@@ -43,31 +49,35 @@ const NodeRenderer = memo(function NodeRenderer({
         return <div className={`${className} ${anim}`} style={css}>{content}</div>;
     };
 
-    const content = renderContent(node, { catalog, product, checkout, onAction, breakpoint, NodeRenderer, editorMode, selectedIds, onSelect });
+    const childCtx = { catalog, product, checkout, onAction, breakpoint, NodeRenderer, editorMode, builderPreview, contentMaxWidth, selectedIds, onSelect };
+    const content = renderContent(node, childCtx);
     if (content === null && !node.children?.length) return null;
 
     if (['section', 'container', 'grid', 'columns', 'flex'].includes(node.type)) {
-        return wrap(renderLayout(node, content, { NodeRenderer, breakpoint, catalog, product, checkout, onAction, editorMode, selectedIds, onSelect }), layoutClass(node));
+        return wrap(renderLayout(node, content, { NodeRenderer, ...childCtx }), layoutClass(node));
     }
 
     return wrap(content);
 });
 
 function renderLayout(node, _, ctx) {
-    const { NodeRenderer, breakpoint, catalog, product, checkout, onAction, editorMode, selectedIds, onSelect } = ctx;
+    const { NodeRenderer, contentMaxWidth, ...childCtx } = ctx;
     const children = (node.children || []).map((child) => (
-        <NodeRenderer key={child.id} node={child} breakpoint={breakpoint} catalog={catalog} product={product} checkout={checkout} onAction={onAction} editorMode={editorMode} selectedIds={selectedIds} onSelect={onSelect} />
+        <NodeRenderer key={child.id} node={child} contentMaxWidth={contentMaxWidth} {...childCtx} />
     ));
 
     switch (node.type) {
         case 'section':
-            return (
-                <section className={`w-full ${node.props?.fullWidth ? '' : 'px-4'}`} style={{ paddingTop: node.props?.paddingY === 'lg' ? '3rem' : '2rem', paddingBottom: node.props?.paddingY === 'lg' ? '3rem' : '2rem' }}>
-                    {children}
-                </section>
-            );
+            return <section className="w-full">{children}</section>;
         case 'container':
-            return <div className="mx-auto w-full px-4 sm:px-6" style={{ maxWidth: MAX_WIDTH[node.props?.maxWidth] || MAX_WIDTH.xl }}>{children}</div>;
+            return (
+                <div
+                    className="mx-auto w-full"
+                    style={{ maxWidth: resolveContainerMaxWidth(node.props?.maxWidth, contentMaxWidth) }}
+                >
+                    {children}
+                </div>
+            );
         case 'grid': {
             const cols = node.props?.columns || 3;
             const grid = cols >= 4 ? 'grid-cols-2 sm:grid-cols-4' : cols === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-3';
@@ -218,7 +228,17 @@ function renderContent(node, ctx) {
                 </div>
             ) : null;
         case 'checkout':
-            return checkout ? <OfferCheckoutForm {...checkout} title={p.title} subtitle={p.subtitle} /> : editorPlaceholder('Checkout form');
+            return checkout ? (
+                <div className="w-full overflow-visible">
+                    <OfferCheckoutForm
+                        {...checkout}
+                        title={p.title}
+                        subtitle={p.subtitle}
+                        supportPhone={p.supportPhone}
+                        supportHours={p.supportHours}
+                    />
+                </div>
+            ) : editorPlaceholder('Checkout form');
         case 'tabs':
             return <TabsBlock items={p.items} />;
         case 'accordion':
@@ -413,18 +433,32 @@ function parseVideo(url) {
 export default memo(function PageRenderer({
     schema, catalog = {}, product, checkout, breakpoint = 'desktop', editorMode = false, selectedIds = [], onSelect,
 }) {
+    const scrollToCheckout = () => {
+        const el = document.getElementById('offer-checkout');
+        if (!el) return;
+        const top = el.getBoundingClientRect().top + window.scrollY - 88;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    };
+
     const onAction = (url) => {
-        if (!url || url === '#checkout') document.getElementById('offer-checkout')?.scrollIntoView({ behavior: 'smooth' });
-        else if (url.startsWith('#')) document.querySelector(url)?.scrollIntoView({ behavior: 'smooth' });
+        if (!url || url === '#checkout') scrollToCheckout();
+        else if (url.startsWith('#')) document.querySelector(url)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         else window.open(url, '_blank');
     };
 
     const theme = schema?.theme || {};
     const cssVars = themeToCssVars(theme);
+    const contentMaxWidth = theme.content_max_width || 'xl';
+    const roots = useMemo(() => {
+        if (!schema?.roots?.length) return [];
+        const copy = JSON.parse(JSON.stringify(schema.roots));
+        migrateLegacyLayout(copy);
+        return copy;
+    }, [schema?.roots]);
 
     return (
         <div style={cssVars} className="builder-page text-[var(--offer-text)]">
-            {(schema?.roots || []).map((node) => (
+            {roots.map((node) => (
                 <NodeRenderer
                     key={node.id}
                     node={node}
@@ -434,6 +468,7 @@ export default memo(function PageRenderer({
                     checkout={checkout}
                     onAction={onAction}
                     editorMode={editorMode}
+                    contentMaxWidth={contentMaxWidth}
                     selectedIds={selectedIds}
                     onSelect={onSelect}
                 />

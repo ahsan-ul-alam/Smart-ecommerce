@@ -41,6 +41,18 @@ export default function ThemeSettings() {
                     { value: 'premium', label: 'Premium cream' },
                 ]}
             />
+            <Select
+                label="Content max width"
+                value={theme.content_max_width || 'xl'}
+                onChange={(e) => update({ content_max_width: e.target.value })}
+                options={[
+                    { value: 'sm', label: '640px' },
+                    { value: 'md', label: '768px' },
+                    { value: 'lg', label: '1024px' },
+                    { value: 'xl', label: '1280px (default)' },
+                    { value: 'full', label: 'Full width' },
+                ]}
+            />
         </div>
     );
 }

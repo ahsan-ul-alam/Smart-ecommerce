@@ -3,7 +3,7 @@ import { mergeTheme, THEME_PRESETS } from './themeTokens';
 
 function section(children, props = {}) {
     const sec = createComponent('section');
-    sec.props = { fullWidth: true, paddingY: 'lg', ...props };
+    sec.props = { fullWidth: true, ...props };
     const container = createComponent('container');
     container.children = children;
     sec.children = [container];
