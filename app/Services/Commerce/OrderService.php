@@ -255,7 +255,7 @@ class OrderService
         ]);
     }
 
-    protected function generateOrderNumber(): string
+    public function generateOrderNumber(): string
     {
         do {
             $number = 'AC-'.now()->format('ymd').'-'.strtoupper(substr(uniqid(), -6));

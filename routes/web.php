@@ -79,6 +79,11 @@ Route::post('/newsletter/unsubscribe', [ShopNewsletterController::class, 'unsubs
 Route::get('/pages/{slug}', [ShopPageController::class, 'show'])->name('pages.show');
 Route::middleware('module:special_product')->group(function () {
     Route::get('/offer/{slug}', [\App\Http\Controllers\Shop\SpecialProductController::class, 'show'])->name('offer.show');
+    Route::post('/offer/{slug}/shipping-preview', [\App\Http\Controllers\Shop\SpecialProductCheckoutController::class, 'shippingPreview'])->name('offer.shipping-preview');
+    Route::post('/offer/{slug}/checkout', [\App\Http\Controllers\Shop\SpecialProductCheckoutController::class, 'store'])->name('offer.checkout');
+    Route::get('/offer/{slug}/orders/{orderNumber}/{status}', [\App\Http\Controllers\Shop\SpecialProductCheckoutController::class, 'result'])
+        ->whereIn('status', ['success', 'failed'])
+        ->name('offer.order.result');
 });
 
 Route::prefix('shop')->name('shop.')->group(function () {
@@ -277,7 +282,11 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::middleware('module:special_product')->group(function () {
         Route::get('special-products', [\App\Http\Controllers\Admin\SpecialProductController::class, 'index'])->name('special-products.index');
         Route::post('special-products', [\App\Http\Controllers\Admin\SpecialProductController::class, 'store'])->name('special-products.store');
+        Route::get('special-products/{specialProduct}/edit', [\App\Http\Controllers\Admin\SpecialProductController::class, 'edit'])->name('special-products.edit');
         Route::put('special-products/{specialProduct}', [\App\Http\Controllers\Admin\SpecialProductController::class, 'update'])->name('special-products.update');
+        Route::patch('special-products/{specialProduct}/autosave', [\App\Http\Controllers\Admin\SpecialProductController::class, 'autosave'])->name('special-products.autosave');
+        Route::get('special-products/{specialProduct}/versions', [\App\Http\Controllers\Admin\SpecialProductController::class, 'versions'])->name('special-products.versions');
+        Route::post('special-products/{specialProduct}/versions/{version}/restore', [\App\Http\Controllers\Admin\SpecialProductController::class, 'restoreVersion'])->name('special-products.versions.restore');
         Route::delete('special-products/{specialProduct}', [\App\Http\Controllers\Admin\SpecialProductController::class, 'destroy'])->name('special-products.destroy');
     });
 

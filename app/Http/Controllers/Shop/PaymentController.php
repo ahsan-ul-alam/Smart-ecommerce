@@ -243,6 +243,20 @@ class PaymentController extends Controller
 
     protected function redirectAfterPayment($order, bool $forcedError = false): RedirectResponse
     {
+        $offerReturn = session()->pull('offer_checkout_return');
+
+        if ($offerReturn && ($offerReturn['order_number'] ?? null) === $order->order_number) {
+            $success = ! $forcedError && $order->payment_status === PaymentStatus::Paid;
+
+            return redirect()->route('offer.order.result', [
+                'slug' => $offerReturn['slug'],
+                'orderNumber' => $order->order_number,
+                'status' => $success ? 'success' : 'failed',
+            ])->with($success ? 'success' : 'error', $success
+                ? 'Payment successful!'
+                : 'Payment could not be verified. Please contact support.');
+        }
+
         if (! $forcedError && $order->payment_status === PaymentStatus::Paid) {
             return redirect()
                 ->route('shop.orders.confirmation', $order->order_number)

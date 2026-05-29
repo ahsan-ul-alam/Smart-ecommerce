@@ -676,6 +676,10 @@
         transform: scale(1.08);
     }
 
+    .offer-checkout-card {
+        @apply rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-lg shadow-slate-200/50;
+    }
+
     .shop-catalog-toolbar {
         @apply flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 p-4 rounded-2xl
             bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700 shadow-sm;
@@ -786,4 +790,26 @@
 @keyframes slideIn {
     from { opacity: 0; transform: translateX(1rem); }
     to { opacity: 1; transform: translateX(0); }
+}
+
+.builder-anim-fade { animation: builderFade 0.5s ease-out both; }
+.builder-anim-slide { animation: builderSlide 0.5s ease-out both; }
+.builder-anim-zoom { animation: builderZoom 0.5s ease-out both; }
+.builder-anim-scale { animation: builderScale 0.45s ease-out both; }
+
+@keyframes builderFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes builderSlide {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes builderZoom {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+@keyframes builderScale {
+    from { opacity: 0; transform: scale(0.88); }
+    to { opacity: 1; transform: scale(1); }
 }
