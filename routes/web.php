@@ -283,7 +283,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
         Route::get('special-products', [\App\Http\Controllers\Admin\SpecialProductController::class, 'index'])->name('special-products.index');
         Route::post('special-products', [\App\Http\Controllers\Admin\SpecialProductController::class, 'store'])->name('special-products.store');
         Route::get('special-products/{specialProduct}/edit', [\App\Http\Controllers\Admin\SpecialProductController::class, 'edit'])->name('special-products.edit');
+        Route::get('special-products/{specialProduct}/preview', [\App\Http\Controllers\Admin\SpecialProductController::class, 'preview'])->name('special-products.preview');
         Route::put('special-products/{specialProduct}', [\App\Http\Controllers\Admin\SpecialProductController::class, 'update'])->name('special-products.update');
+        Route::patch('special-products/{specialProduct}/status', [\App\Http\Controllers\Admin\SpecialProductController::class, 'updateStatus'])->name('special-products.status');
         Route::patch('special-products/{specialProduct}/autosave', [\App\Http\Controllers\Admin\SpecialProductController::class, 'autosave'])->name('special-products.autosave');
         Route::get('special-products/{specialProduct}/versions', [\App\Http\Controllers\Admin\SpecialProductController::class, 'versions'])->name('special-products.versions');
         Route::post('special-products/{specialProduct}/versions/{version}/restore', [\App\Http\Controllers\Admin\SpecialProductController::class, 'restoreVersion'])->name('special-products.versions.restore');

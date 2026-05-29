@@ -1,37 +1,34 @@
 import { Link } from '@inertiajs/react';
 import ApplyThemeBranding from '../Components/ApplyThemeBranding';
 import FlashMessage from '../Components/UI/FlashMessage';
+import { themeToCssVars, pageBackgroundStyle, mergeTheme } from '../Builder/schema/themeTokens';
 
 export default function OfferLayout({ children, page = {}, theme = {} }) {
-    const primary = theme.primary_color || '#0d9488';
-    const secondary = theme.secondary_color || '#f59e0b';
-    const gradient = theme.background_style === 'gradient';
+    const t = mergeTheme(theme);
+    const cssVars = themeToCssVars(t);
 
     return (
         <div
-            className="min-h-screen flex flex-col"
+            className="min-h-screen flex flex-col text-[var(--offer-text)]"
             style={{
-                '--offer-primary': primary,
-                '--offer-secondary': secondary,
-                background: gradient
-                    ? `linear-gradient(180deg, color-mix(in srgb, ${primary} 8%, white) 0%, white 40%, color-mix(in srgb, ${secondary} 6%, white) 100%)`
-                    : undefined,
+                ...cssVars,
+                background: pageBackgroundStyle(t),
             }}
         >
             <ApplyThemeBranding />
             <FlashMessage />
-            <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-40">
+            <header className="border-b border-[var(--offer-primary)]/10 bg-white/90 backdrop-blur-md sticky top-0 z-40">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-                    <Link href="/" className="text-sm font-bold text-slate-800 hover:text-[var(--offer-primary)]">
+                    <Link href="/" className="text-sm font-bold hover:text-[var(--offer-primary)]">
                         {page.name || 'Offer'}
                     </Link>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[var(--offer-primary)]">
+                    <span className="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded-full text-white" style={{ background: 'var(--offer-primary)' }}>
                         Limited offer
                     </span>
                 </div>
             </header>
             <main className="flex-1 w-full">{children}</main>
-            <footer className="border-t py-6 text-center text-xs text-slate-500">
+            <footer className="border-t border-[var(--offer-primary)]/10 py-6 text-center text-xs opacity-70">
                 Secure checkout · Cash on delivery available
             </footer>
         </div>

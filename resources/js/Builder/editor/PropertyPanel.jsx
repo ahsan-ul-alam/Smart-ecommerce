@@ -5,7 +5,7 @@ import { useBuilderStore, useSelectedNode } from '../store/builderStore';
 import { COMPONENT_LABELS, DATA_SOURCE_TYPES, LAYOUT_TYPES } from '../registry/components';
 import { mediaUrl } from '../../utils/mediaUrl';
 
-export default function PropertyPanel({ catalog = {} }) {
+export default function PropertyPanel({ catalog = {}, mode = 'all' }) {
     const node = useSelectedNode();
     const breakpoint = useBuilderStore((s) => s.breakpoint);
     const updateNodeProps = useBuilderStore((s) => s.updateNodeProps);
@@ -13,8 +13,15 @@ export default function PropertyPanel({ catalog = {} }) {
     const duplicateNode = useBuilderStore((s) => s.duplicateNode);
     const removeNode = useBuilderStore((s) => s.removeNode);
 
+    const showContent = mode === 'all' || mode === 'content';
+    const showStyle = mode === 'all' || mode === 'style';
+
     if (!node) {
-        return <p className="text-sm text-slate-500 p-4">Select an element on the canvas to edit content and styles.</p>;
+        return (
+            <p className="text-sm text-slate-500 p-4">
+                {mode === 'style' ? 'Select a block to edit spacing, colors, and typography.' : 'Select a block on the canvas to edit its content.'}
+            </p>
+        );
     }
 
     const p = node.props || {};
@@ -23,47 +30,54 @@ export default function PropertyPanel({ catalog = {} }) {
     const setStyle = (key, val) => updateNodeStyle(node.id, breakpoint, { [key]: val });
 
     return (
-        <div className="p-4 space-y-4 overflow-y-auto h-full">
-            <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-slate-800 dark:text-white">{COMPONENT_LABELS[node.type] || node.type}</p>
-                <div className="flex gap-1 text-xs">
-                    <button type="button" onClick={() => duplicateNode(node.id)} className="px-2 py-1 rounded border hover:bg-slate-50">Duplicate</button>
-                    <button type="button" onClick={() => removeNode(node.id)} className="px-2 py-1 rounded border text-red-600 hover:bg-red-50">Delete</button>
+        <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+                <div>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white">{COMPONENT_LABELS[node.type] || node.type}</p>
+                    {showStyle && <p className="text-[10px] text-slate-400 mt-0.5">Breakpoint: {breakpoint}</p>}
                 </div>
+                {showContent && (
+                    <div className="flex gap-1 text-xs shrink-0">
+                        <button type="button" onClick={() => duplicateNode(node.id)} className="px-2 py-1 rounded border hover:bg-slate-50">Copy</button>
+                        <button type="button" onClick={() => removeNode(node.id)} className="px-2 py-1 rounded border text-red-600 hover:bg-red-50">Delete</button>
+                    </div>
+                )}
             </div>
 
-            <p className="text-xs text-slate-400">Editing: {breakpoint}</p>
+            {showContent && renderContentFields(node, p, setProp, catalog)}
 
-            {renderContentFields(node, p, setProp, catalog)}
+            {showStyle && (
+                <div className={`space-y-3 ${showContent ? 'pt-4 border-t' : ''}`}>
+                    <p className="text-xs font-bold uppercase text-slate-400">Layout & appearance</p>
+                    <Input label="Padding" value={style.padding || ''} onChange={(e) => setStyle('padding', e.target.value)} placeholder="16px or 1rem 2rem" />
+                    <Input label="Margin" value={style.margin || ''} onChange={(e) => setStyle('margin', e.target.value)} />
+                    <Input label="Width" value={style.width || ''} onChange={(e) => setStyle('width', e.target.value)} />
+                    <Input label="Min height" value={style.minHeight || ''} onChange={(e) => setStyle('minHeight', e.target.value)} />
+                    <Input label="Background" type="color" value={style.backgroundColor || '#ffffff'} onChange={(e) => setStyle('backgroundColor', e.target.value === '#ffffff' ? '' : e.target.value)} />
+                    <Input label="Text color" type="color" value={style.color || '#000000'} onChange={(e) => setStyle('color', e.target.value === '#000000' ? '' : e.target.value)} />
+                    <Input label="Font size" value={style.fontSize || ''} onChange={(e) => setStyle('fontSize', e.target.value)} placeholder="1.25rem" />
+                    <Select label="Font weight" value={style.fontWeight || ''} onChange={(e) => setStyle('fontWeight', e.target.value)}
+                        options={[{ value: '', label: 'Default' }, { value: '400', label: 'Normal' }, { value: '600', label: 'Semibold' }, { value: '700', label: 'Bold' }]} />
+                    <Select label="Text align" value={style.textAlign || ''} onChange={(e) => setStyle('textAlign', e.target.value)}
+                        options={[{ value: '', label: 'Default' }, { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]} />
+                    <Input label="Border radius" value={style.borderRadius || ''} onChange={(e) => setStyle('borderRadius', e.target.value)} placeholder="12px" />
+                    <Input label="Border" value={style.border || ''} onChange={(e) => setStyle('border', e.target.value)} placeholder="1px solid #e2e8f0" />
+                    <Input label="Box shadow" value={style.boxShadow || ''} onChange={(e) => setStyle('boxShadow', e.target.value)} />
+                    <Input label="Opacity" type="number" min="0" max="1" step="0.1" value={style.opacity ?? ''} onChange={(e) => setStyle('opacity', e.target.value ? Number(e.target.value) : undefined)} />
+                    <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={style.display === 'none'} onChange={(e) => setStyle('display', e.target.checked ? 'none' : undefined)} />
+                        Hidden on {breakpoint}
+                    </label>
+                </div>
+            )}
 
-            <div className="pt-4 border-t space-y-3">
-                <p className="text-xs font-bold uppercase text-slate-400">Style ({breakpoint})</p>
-                <Input label="Padding" value={style.padding || ''} onChange={(e) => setStyle('padding', e.target.value)} placeholder="16px or 1rem 2rem" />
-                <Input label="Margin" value={style.margin || ''} onChange={(e) => setStyle('margin', e.target.value)} />
-                <Input label="Width" value={style.width || ''} onChange={(e) => setStyle('width', e.target.value)} />
-                <Input label="Min height" value={style.minHeight || ''} onChange={(e) => setStyle('minHeight', e.target.value)} />
-                <Input label="Background" type="color" value={style.backgroundColor || '#ffffff'} onChange={(e) => setStyle('backgroundColor', e.target.value === '#ffffff' ? '' : e.target.value)} />
-                <Input label="Text color" type="color" value={style.color || '#000000'} onChange={(e) => setStyle('color', e.target.value === '#000000' ? '' : e.target.value)} />
-                <Input label="Font size" value={style.fontSize || ''} onChange={(e) => setStyle('fontSize', e.target.value)} placeholder="1.25rem" />
-                <Select label="Font weight" value={style.fontWeight || ''} onChange={(e) => setStyle('fontWeight', e.target.value)}
-                    options={[{ value: '', label: 'Default' }, { value: '400', label: 'Normal' }, { value: '600', label: 'Semibold' }, { value: '700', label: 'Bold' }]} />
-                <Select label="Text align" value={style.textAlign || ''} onChange={(e) => setStyle('textAlign', e.target.value)}
-                    options={[{ value: '', label: 'Default' }, { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]} />
-                <Input label="Border radius" value={style.borderRadius || ''} onChange={(e) => setStyle('borderRadius', e.target.value)} placeholder="12px" />
-                <Input label="Border" value={style.border || ''} onChange={(e) => setStyle('border', e.target.value)} placeholder="1px solid #e2e8f0" />
-                <Input label="Box shadow" value={style.boxShadow || ''} onChange={(e) => setStyle('boxShadow', e.target.value)} />
-                <Input label="Opacity" type="number" min="0" max="1" step="0.1" value={style.opacity ?? ''} onChange={(e) => setStyle('opacity', e.target.value ? Number(e.target.value) : undefined)} />
-                <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={style.display === 'none'} onChange={(e) => setStyle('display', e.target.checked ? 'none' : undefined)} />
-                    Hidden on {breakpoint}
-                </label>
-            </div>
-
-            <div className="pt-4 border-t space-y-2">
-                <p className="text-xs font-bold uppercase text-slate-400">Animation</p>
-                <Select label="Type" value={node.animation?.type || 'none'} onChange={(e) => useBuilderStore.getState().updateNode(node.id, { animation: { ...node.animation, type: e.target.value } })}
-                    options={[{ value: 'none', label: 'None' }, { value: 'fade', label: 'Fade' }, { value: 'slide', label: 'Slide' }, { value: 'zoom', label: 'Zoom' }, { value: 'scale', label: 'Scale' }]} />
-            </div>
+            {(showContent || mode === 'all') && (
+                <div className="pt-4 border-t space-y-2">
+                    <p className="text-xs font-bold uppercase text-slate-400">Animation</p>
+                    <Select label="Type" value={node.animation?.type || 'none'} onChange={(e) => useBuilderStore.getState().updateNode(node.id, { animation: { ...node.animation, type: e.target.value } })}
+                        options={[{ value: 'none', label: 'None' }, { value: 'fade', label: 'Fade' }, { value: 'slide', label: 'Slide' }, { value: 'zoom', label: 'Zoom' }, { value: 'scale', label: 'Scale' }]} />
+                </div>
+            )}
         </div>
     );
 }
@@ -161,7 +175,7 @@ function renderContentFields(node, p, setProp, catalog) {
             );
         default:
             if (LAYOUT_TYPES.includes(node.type)) {
-                return <p className="text-xs text-slate-500">Layout container — add child components via library.</p>;
+                return <p className="text-xs text-slate-500">Layout block — use widgets to add content blocks to the page.</p>;
             }
             return null;
     }

@@ -1,6 +1,7 @@
 import { memo, useMemo, useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { resolveStyle, styleToCss } from '../schema/defaults';
+import { themeToCssVars, builderSelectionClass } from '../schema/themeTokens';
 import { mediaUrl } from '../../utils/mediaUrl';
 import ProductCard from '../../Components/Shop/ProductCard';
 import ProductThumbnail from '../../Components/Catalog/ProductThumbnail';
@@ -30,7 +31,7 @@ const NodeRenderer = memo(function NodeRenderer({
                     role="button"
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); onSelect?.(node.id, e.shiftKey); }}
-                    className={`${className} ${selected ? 'ring-2 ring-teal-500 ring-offset-2' : ''} ${editorMode ? 'cursor-pointer' : ''} ${anim}`}
+                    className={`${className} ${selected ? builderSelectionClass() : ''} ${editorMode ? 'cursor-pointer' : ''} ${anim}`}
                     style={css}
                     data-node-id={node.id}
                     data-node-type={node.type}
@@ -99,7 +100,7 @@ function renderContent(node, ctx) {
     switch (node.type) {
         case 'heading': {
             const Tag = `h${Math.min(6, Math.max(1, p.level || 2))}`;
-            return <Tag className="font-bold text-slate-900">{p.text}</Tag>;
+            return <Tag className="font-bold text-[var(--offer-text)]">{p.text}</Tag>;
         }
         case 'text':
             return (
@@ -113,7 +114,7 @@ function renderContent(node, ctx) {
             return <div className="prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: p.html || '' }} />;
         case 'button':
             return (
-                <button type="button" onClick={() => onAction?.(p.url)} className={`px-6 py-3 rounded-xl font-bold ${p.variant === 'outline' ? 'border border-slate-300' : 'bg-[var(--offer-primary)] text-white'}`}>
+                <button type="button" onClick={() => onAction?.(p.url)} className={`px-6 py-3 rounded-xl font-bold ${p.variant === 'outline' ? 'border-2 border-[var(--offer-primary)] text-[var(--offer-primary)] bg-transparent' : p.variant === 'secondary' ? 'bg-[var(--offer-secondary)] text-white' : 'bg-[var(--offer-primary)] text-white'}`}>
                     {p.text}
                 </button>
             );
@@ -133,9 +134,9 @@ function renderContent(node, ctx) {
             return (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {(p.items || []).map((it, i) => (
-                        <div key={i} className="text-center p-4 rounded-2xl bg-white border shadow-sm">
+                        <div key={i} className="text-center p-4 rounded-2xl border shadow-sm bg-[var(--offer-primary-light)] border-[var(--offer-primary)]/15">
                             <p className="text-2xl font-bold text-[var(--offer-primary)]">{it.value}</p>
-                            <p className="text-xs text-slate-600">{it.label}</p>
+                            <p className="text-xs opacity-70">{it.label}</p>
                         </div>
                     ))}
                 </div>
@@ -158,7 +159,7 @@ function renderContent(node, ctx) {
                     <div className="grid sm:grid-cols-2 gap-4">
                         {(p.items || []).map((t, i) => (
                             <blockquote key={i} className="p-4 rounded-2xl bg-white border">
-                                <p className="text-amber-500 text-sm">{'★'.repeat(t.rating || 5)}</p>
+                                <p className="text-[var(--offer-secondary)] text-sm">{'★'.repeat(t.rating || 5)}</p>
                                 <p className="text-sm italic text-slate-600 mt-1">&ldquo;{t.text}&rdquo;</p>
                                 <p className="text-xs font-semibold mt-2">— {t.name}</p>
                             </blockquote>
@@ -170,7 +171,7 @@ function renderContent(node, ctx) {
             return <FaqBlock items={p.items} title={p.title} />;
         case 'cta':
             return (
-                <div className="text-center py-8 px-6 rounded-3xl bg-gradient-to-br from-[var(--offer-primary)] to-teal-700 text-white">
+                <div className="text-center py-8 px-6 rounded-3xl text-white" style={{ background: 'linear-gradient(135deg, var(--offer-primary) 0%, var(--offer-primary-dark) 100%)' }}>
                     <h2 className="text-2xl font-bold mb-2">{p.title}</h2>
                     <p className="mb-6 opacity-90">{p.body}</p>
                     <button type="button" onClick={() => onAction?.('#checkout')} className="px-8 py-3 rounded-xl bg-white text-[var(--offer-primary)] font-bold">{p.button}</button>
@@ -286,12 +287,28 @@ function HeroBanner({ props: p, onAction }) {
     const src = mediaUrl(p.src);
     return (
         <div className="relative rounded-3xl overflow-hidden min-h-[280px]">
-            {src ? <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" /> : <div className="absolute inset-0 bg-gradient-to-br from-[var(--offer-primary)] to-slate-800" />}
+            {src ? <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" /> : (
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, var(--offer-primary) 0%, var(--offer-primary-dark) 100%)' }} />
+            )}
             <div className={`absolute inset-0 ${p.overlay === 'light' ? 'bg-white/50' : 'bg-black/45'}`} />
-            <div className={`relative z-10 p-10 text-center ${p.overlay === 'light' ? 'text-slate-900' : 'text-white'}`}>
+            <div className={`relative z-10 p-10 text-center ${p.overlay === 'light' ? 'text-[var(--offer-text)]' : 'text-white'}`}>
+                {p.badge && (
+                    <span className="inline-block mb-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide" style={{ background: 'var(--offer-secondary)', color: '#fff' }}>
+                        {p.badge}
+                    </span>
+                )}
                 <h1 className="text-3xl sm:text-5xl font-bold">{p.title}</h1>
                 {p.subtitle && <p className="mt-3 text-lg opacity-90">{p.subtitle}</p>}
-                {p.button && <button type="button" onClick={() => onAction?.(p.buttonUrl || '#checkout')} className="mt-6 px-8 py-3 rounded-xl bg-white text-[var(--offer-primary)] font-bold">{p.button}</button>}
+                {p.button && (
+                    <button
+                        type="button"
+                        onClick={() => onAction?.(p.buttonUrl || '#checkout')}
+                        className="mt-6 px-8 py-3 rounded-xl font-bold shadow-lg"
+                        style={{ background: '#fff', color: 'var(--offer-primary)' }}
+                    >
+                        {p.button}
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -373,8 +390,8 @@ function CountdownBlock({ targetDate, label }) {
         return () => clearInterval(id);
     }, [targetDate]);
     return (
-        <div className="text-center p-6 rounded-2xl bg-slate-900 text-white">
-            {label && <p className="text-sm uppercase tracking-wider text-amber-300 mb-2">{label}</p>}
+        <div className="text-center p-6 rounded-2xl text-white" style={{ background: 'linear-gradient(135deg, var(--offer-accent) 0%, var(--offer-primary-dark) 100%)' }}>
+            {label && <p className="text-sm uppercase tracking-wider mb-2 opacity-90" style={{ color: 'var(--offer-secondary)' }}>{label}</p>}
             <p className="text-4xl font-mono font-bold">{left || '--:--:--'}</p>
         </div>
     );
@@ -403,10 +420,10 @@ export default memo(function PageRenderer({
     };
 
     const theme = schema?.theme || {};
-    const primary = theme.primary_color || '#0d9488';
+    const cssVars = themeToCssVars(theme);
 
     return (
-        <div style={{ '--offer-primary': primary, '--offer-secondary': theme.secondary_color || '#f59e0b' }} className="builder-page">
+        <div style={cssVars} className="builder-page text-[var(--offer-text)]">
             {(schema?.roots || []).map((node) => (
                 <NodeRenderer
                     key={node.id}

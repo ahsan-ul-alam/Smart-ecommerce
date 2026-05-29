@@ -5,8 +5,8 @@ import LandingBlockRenderer from '../../Components/SpecialProduct/LandingBlockRe
 import OfferCheckoutForm from '../../Components/SpecialProduct/OfferCheckoutForm';
 
 export default function SpecialProduct({ page, product, checkout, catalog = {} }) {
-    const theme = page.theme ?? {};
-    const schema = page.schema;
+    const theme = { ...(page.theme ?? {}), ...(page.schema?.theme ?? {}) };
+    const schema = page.schema ? { ...page.schema, theme } : null;
     const useSchema = schema?.roots?.length > 0;
     const blocks = page.blocks ?? [];
     const hasCheckoutBlock = blocks.some((b) => b.type === 'checkout');

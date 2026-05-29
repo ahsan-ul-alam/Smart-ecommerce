@@ -1,4 +1,6 @@
 import { createNode, createSection, newId, defaultStyle, defaultAnimation } from './defaults';
+import { mergeTheme } from './themeTokens';
+import { kafelaMartTemplate } from './templatePresets';
 
 const BLOCK_MAP = {
     heading: () => createNode('heading', { text: 'Heading', level: 2 }),
@@ -58,10 +60,13 @@ function legacyProps(block) {
 }
 
 export function normalizeSchema(schema, theme = {}) {
-    if (!schema || !schema.roots) {
-        return blocksToSchema(schema?.blocks || [], theme);
+    if (schema?.roots?.length) {
+        return { version: 2, theme: mergeTheme({ ...theme, ...schema.theme }), roots: schema.roots };
     }
-    return { version: 2, theme: schema.theme || theme, roots: schema.roots };
+    if (schema?.blocks?.length) {
+        return blocksToSchema(schema.blocks, theme);
+    }
+    return kafelaMartTemplate();
 }
 
 export function ensureNodeIds(nodes) {

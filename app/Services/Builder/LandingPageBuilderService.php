@@ -142,15 +142,21 @@ class LandingPageBuilderService
 
     protected function pruneAutosaves(SpecialProduct $page, int $keep = 20): void
     {
-        $ids = LandingPageVersion::query()
+        $keepIds = LandingPageVersion::query()
             ->where('special_product_id', $page->id)
             ->where('type', 'autosave')
             ->orderByDesc('created_at')
-            ->skip($keep)
+            ->limit($keep)
             ->pluck('id');
 
-        if ($ids->isNotEmpty()) {
-            LandingPageVersion::query()->whereIn('id', $ids)->delete();
+        if ($keepIds->isEmpty()) {
+            return;
         }
+
+        LandingPageVersion::query()
+            ->where('special_product_id', $page->id)
+            ->where('type', 'autosave')
+            ->whereNotIn('id', $keepIds)
+            ->delete();
     }
 }

@@ -9,7 +9,7 @@ use App\Models\SpecialProduct;
 use App\Services\Builder\BuilderCatalogService;
 use App\Services\Builder\LandingPageBuilderService;
 use App\Support\MediaUrl;
-use App\Support\PromotionalImage;
+use App\Http\Controllers\Shop\SpecialProductController as ShopSpecialProductController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,7 +49,7 @@ class SpecialProductController extends Controller
             'product_id' => $data['product_id'],
             'headline' => $data['name'],
             'subheadline' => 'Limited-time offer — order now with fast delivery.',
-            'schema' => $this->builder->defaultSchema(),
+            'schema' => null,
             'schema_version' => 2,
             'theme' => $this->defaultTheme(),
             'status' => 'draft',
@@ -71,6 +71,11 @@ class SpecialProductController extends Controller
             'catalog' => $this->catalog->editorPayload(),
             'versions' => $specialProduct->versions()->limit(15)->get(['id', 'version_number', 'type', 'created_at']),
         ]);
+    }
+
+    public function preview(SpecialProduct $specialProduct): Response
+    {
+        return app(ShopSpecialProductController::class)->showPreview($specialProduct);
     }
 
     public function update(Request $request, SpecialProduct $specialProduct): RedirectResponse|JsonResponse
@@ -122,6 +127,32 @@ class SpecialProductController extends Controller
         }
 
         return back()->with('success', 'Landing page saved.');
+    }
+
+    public function updateStatus(Request $request, SpecialProduct $specialProduct): RedirectResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', 'in:draft,published,scheduled'],
+            'scheduled_at' => ['nullable', 'date'],
+        ]);
+
+        $status = $data['status'];
+        $scheduledAt = $data['scheduled_at'] ?? $specialProduct->scheduled_at;
+
+        if ($status === 'scheduled' && ! $scheduledAt) {
+            $scheduledAt = now()->addDay();
+        }
+
+        $specialProduct->update([
+            'status' => $status,
+            'is_published' => $status === 'published',
+            'published_at' => $status === 'published'
+                ? ($specialProduct->published_at ?? now())
+                : ($status === 'draft' ? null : $specialProduct->published_at),
+            'scheduled_at' => $status === 'scheduled' ? $scheduledAt : null,
+        ]);
+
+        return back()->with('success', 'Status updated.');
     }
 
     public function autosave(Request $request, SpecialProduct $specialProduct): JsonResponse
@@ -223,16 +254,22 @@ class SpecialProductController extends Controller
             'seo_description' => $page->seo_description,
             'canonical_url' => $page->canonical_url,
             'og_image' => MediaUrl::resolve($page->og_image),
-            'preview_url' => $page->is_published ? url('/offer/'.$page->slug) : null,
+            'preview_url' => $page->is_published
+                ? url('/offer/'.$page->slug)
+                : route('admin.special-products.preview', $page),
+            'live_url' => url('/offer/'.$page->slug),
         ];
     }
 
     protected function defaultTheme(): array
     {
         return [
-            'primary_color' => '#0d9488',
-            'secondary_color' => '#f59e0b',
-            'background_style' => 'gradient',
+            'primary_color' => '#16a34a',
+            'secondary_color' => '#f97316',
+            'accent_color' => '#dc2626',
+            'page_background' => '#ffffff',
+            'text_color' => '#1e293b',
+            'background_style' => 'plain',
         ];
     }
 

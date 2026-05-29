@@ -1,3 +1,5 @@
+import { kafelaMartTemplate } from './templatePresets';
+
 export const BREAKPOINTS = ['desktop', 'tablet', 'mobile'];
 
 export const DEVICE_WIDTH = { desktop: '100%', tablet: '768px', mobile: '390px' };
@@ -44,12 +46,8 @@ export function createSection(children = []) {
     return section;
 }
 
-export function createDefaultSchema(theme = {}) {
-    return {
-        version: 2,
-        theme,
-        roots: [productLaunchSection()],
-    };
+export function createDefaultSchema() {
+    return kafelaMartTemplate();
 }
 
 export function productLaunchSection() {

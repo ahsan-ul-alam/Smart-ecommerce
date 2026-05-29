@@ -1,66 +1,103 @@
-import { createDefaultSchema, emptySchema } from './defaults';
-import { createComponent } from '../registry/components';
+import { mergeTheme } from './themeTokens';
+import {
+    blankTemplate,
+    kafelaMartTemplate,
+    ghorerBazarTemplate,
+    wajihPremiumTemplate,
+    flashSaleTemplate,
+    eidCampaignTemplate,
+    singleProductOfferTemplate,
+    leadGenTemplate,
+} from './templatePresets';
+import { createDefaultSchema } from './defaults';
 
 export const PAGE_TEMPLATES = [
-    { id: 'blank', label: 'Blank page', description: 'Start from scratch', build: () => emptySchema() },
-    { id: 'product_launch', label: 'Product Launch', description: 'Hero, stats, products, FAQ, checkout', build: () => createDefaultSchema() },
-    { id: 'flash_sale', label: 'Flash Sale', description: 'Countdown + flash products', build: flashSaleTemplate },
-    { id: 'eid_campaign', label: 'Eid Campaign', description: 'Festive hero + categories', build: eidTemplate },
-    { id: 'lead_gen', label: 'Lead Generation', description: 'Hero + newsletter + CTA', build: leadGenTemplate },
-    { id: 'fashion_store', label: 'Fashion Store', description: 'Product carousel + grid', build: fashionTemplate },
-    { id: 'electronics', label: 'Electronics Store', description: 'Features + product grid', build: electronicsTemplate },
+    {
+        id: 'kafela_mart',
+        label: 'Kafela Mart',
+        description: 'Green trust · stats · reviews · COD checkout',
+        category: 'bd_brands',
+        preview: { primary: '#16a34a', secondary: '#f97316' },
+        build: kafelaMartTemplate,
+    },
+    {
+        id: 'ghorer_bazar',
+        label: 'Ghorer Bazar',
+        description: 'Warm orange · flash countdown · categories',
+        category: 'bd_brands',
+        preview: { primary: '#ea580c', secondary: '#fbbf24' },
+        build: ghorerBazarTemplate,
+    },
+    {
+        id: 'wajih_premium',
+        label: 'Wajih Premium',
+        description: 'Dark luxury · gold · single product focus',
+        category: 'bd_brands',
+        preview: { primary: '#0f172a', secondary: '#d4af37' },
+        build: wajihPremiumTemplate,
+    },
+    {
+        id: 'single_product',
+        label: 'Single product offer',
+        description: 'One product · trust badges · FAQ · order form',
+        category: 'offers',
+        preview: { primary: '#16a34a', secondary: '#f97316' },
+        build: singleProductOfferTemplate,
+    },
+    {
+        id: 'flash_sale',
+        label: 'Flash sale',
+        description: 'Countdown · urgency red · product grid',
+        category: 'offers',
+        preview: { primary: '#dc2626', secondary: '#fbbf24' },
+        build: flashSaleTemplate,
+    },
+    {
+        id: 'eid_campaign',
+        label: 'Eid campaign',
+        description: 'Festive hero · categories · best sellers',
+        category: 'seasonal',
+        preview: { primary: '#ea580c', secondary: '#fbbf24' },
+        build: eidCampaignTemplate,
+    },
+    {
+        id: 'lead_gen',
+        label: 'Lead generation',
+        description: 'Newsletter · CTA · minimal',
+        category: 'marketing',
+        preview: { primary: '#0d9488', secondary: '#f59e0b' },
+        build: leadGenTemplate,
+    },
+    {
+        id: 'product_launch',
+        label: 'Product launch',
+        description: 'Default launch layout',
+        category: 'offers',
+        preview: { primary: '#16a34a', secondary: '#f97316' },
+        build: () => createDefaultSchema(mergeTheme({ primary_color: '#16a34a', secondary_color: '#f97316' })),
+    },
+    {
+        id: 'blank',
+        label: 'Blank page',
+        description: 'Start from scratch',
+        category: 'basic',
+        preview: { primary: '#64748b', secondary: '#94a3b8' },
+        build: blankTemplate,
+    },
 ];
 
-function flashSaleTemplate() {
-    const schema = createDefaultSchema();
-    const container = schema.roots[0].children[0];
-    container.children.unshift(
-        createComponent('countdown'),
-        createComponent('flash_sale_products'),
-    );
-    return schema;
-}
+export const TEMPLATE_CATEGORIES = [
+    { id: 'bd_brands', label: 'BD brand styles' },
+    { id: 'offers', label: 'Product offers' },
+    { id: 'seasonal', label: 'Seasonal' },
+    { id: 'marketing', label: 'Marketing' },
+    { id: 'basic', label: 'Basic' },
+];
 
-function eidTemplate() {
-    const schema = createDefaultSchema();
-    const children = schema.roots[0].children[0].children;
-    children[0] = createComponent('hero_banner');
-    children[0].props = { title: 'Eid Collection', subtitle: 'Celebrate with exclusive deals', button: 'Shop Eid offers', buttonUrl: '#checkout' };
-    children.splice(2, 0, createComponent('category_grid'));
-    return schema;
-}
-
-function leadGenTemplate() {
-    const section = createComponent('section');
-    const container = createComponent('container');
-    container.children = [
-        createComponent('hero_banner'),
-        createComponent('newsletter'),
-        createComponent('cta'),
-    ];
-    section.children = [container];
-    return { version: 2, theme: {}, roots: [section] };
-}
-
-function fashionTemplate() {
-    const schema = createDefaultSchema();
-    schema.roots[0].children[0].children.splice(2, 0, createComponent('product_carousel'));
-    return schema;
-}
-
-function electronicsTemplate() {
-    const schema = createDefaultSchema();
-    schema.roots[0].children[0].children.splice(2, 0,
-        createComponent('features'),
-        createComponent('product_grid'),
-    );
-    return schema;
-}
-
-export function importTemplate(templateId, theme = {}) {
+export function importTemplate(templateId) {
     const tpl = PAGE_TEMPLATES.find((t) => t.id === templateId);
-    if (!tpl) return createDefaultSchema(theme);
-    const schema = tpl.build();
-    schema.theme = { ...theme, ...schema.theme };
-    return schema;
+    if (!tpl) return createDefaultSchema(mergeTheme());
+    return tpl.build();
 }
+
+export { kafelaMartTemplate, ghorerBazarTemplate, wajihPremiumTemplate };

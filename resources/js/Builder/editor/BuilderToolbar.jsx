@@ -1,11 +1,12 @@
 import {
-    Monitor, Tablet, Smartphone, Undo2, Redo2, Save, LayoutTemplate,
+    Monitor, Tablet, Smartphone, Undo2, Redo2, Save, ExternalLink,
 } from 'lucide-react';
+import clsx from 'clsx';
 import Button from '../../Components/UI/Button';
 import { useBuilderStore } from '../store/builderStore';
-import { PAGE_TEMPLATES, importTemplate } from '../schema/templates';
+import TemplatePicker from './TemplatePicker';
 
-export default function BuilderToolbar({ onSave, saving, page }) {
+export default function BuilderToolbar({ onSave, saving, page, embedded = false }) {
     const breakpoint = useBuilderStore((s) => s.breakpoint);
     const setBreakpoint = useBuilderStore((s) => s.setBreakpoint);
     const undo = useBuilderStore((s) => s.undo);
@@ -14,8 +15,6 @@ export default function BuilderToolbar({ onSave, saving, page }) {
     const future = useBuilderStore((s) => s.future);
     const isDirty = useBuilderStore((s) => s.isDirty);
     const lastSavedAt = useBuilderStore((s) => s.lastSavedAt);
-    const importSchema = useBuilderStore((s) => s.importSchema);
-    const theme = useBuilderStore((s) => s.theme);
 
     const devices = [
         { id: 'desktop', icon: Monitor, label: 'Desktop' },
@@ -24,45 +23,50 @@ export default function BuilderToolbar({ onSave, saving, page }) {
     ];
 
     return (
-        <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b bg-white dark:bg-slate-900 sticky top-0 z-30">
-            <div className="flex items-center gap-1 border rounded-lg p-0.5">
+        <div className={`flex flex-wrap items-center gap-2 ${embedded ? 'py-1' : 'px-4 py-2 border-b bg-white dark:bg-slate-900 sticky top-0 z-30'}`}>
+            <div className="flex items-center gap-1 border rounded-lg p-0.5 bg-slate-50 dark:bg-slate-800">
                 {devices.map(({ id, icon: Icon, label }) => (
                     <button key={id} type="button" title={label} onClick={() => setBreakpoint(id)}
-                        className={`p-2 rounded-md ${breakpoint === id ? 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200' : 'text-slate-500 hover:bg-slate-100'}`}>
-                        <Icon size={16} />
+                        className={`p-1.5 rounded-md ${breakpoint === id ? 'bg-white dark:bg-slate-900 text-[var(--offer-primary)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                        <Icon size={15} />
                     </button>
                 ))}
             </div>
 
-            <div className="flex items-center gap-1">
-                <button type="button" disabled={!past.length} onClick={undo} className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="Undo (Ctrl+Z)"><Undo2 size={16} /></button>
-                <button type="button" disabled={!future.length} onClick={redo} className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="Redo (Ctrl+Y)"><Redo2 size={16} /></button>
+            <div className="flex items-center gap-0.5">
+                <button type="button" disabled={!past.length} onClick={undo} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="Undo (Ctrl+Z)"><Undo2 size={15} /></button>
+                <button type="button" disabled={!future.length} onClick={redo} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="Redo (Ctrl+Y)"><Redo2 size={15} /></button>
             </div>
 
-            <select
-                className="text-xs border rounded-lg px-2 py-1.5 max-w-[160px]"
-                defaultValue=""
-                onChange={(e) => {
-                    if (!e.target.value) return;
-                    if (confirm('Replace page content with this template?')) {
-                        importSchema(importTemplate(e.target.value, theme));
-                    }
-                    e.target.value = '';
-                }}
-            >
-                <option value="">Templates…</option>
-                {PAGE_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-            </select>
+            <TemplatePicker />
 
-            <span className="text-xs text-slate-400 ml-auto hidden sm:inline">
-                {isDirty ? 'Unsaved changes' : lastSavedAt ? `Saved ${new Date(lastSavedAt).toLocaleTimeString()}` : 'Auto-save on'}
-            </span>
+            <div className="flex items-center gap-2 ml-auto shrink-0">
+                <span className="text-[10px] text-slate-400 hidden md:inline">
+                    {isDirty ? 'Unsaved changes' : lastSavedAt ? `Saved ${new Date(lastSavedAt).toLocaleTimeString()}` : 'Auto-save on'}
+                </span>
 
-            {page.preview_url && (
-                <a href={page.preview_url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-teal-700 hidden sm:inline">Preview live</a>
-            )}
+                {page.preview_url && (
+                    <a
+                        href={page.preview_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={isDirty ? 'Save first to see your latest changes on the live page' : page.is_published ? 'Open live page' : 'Open draft preview (admin only)'}
+                        className={clsx(
+                            'inline-flex items-center justify-center gap-1.5 font-medium transition-premium',
+                            '!py-1.5 !px-3 !text-xs rounded-lg border',
+                            'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200',
+                            'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700',
+                        )}
+                    >
+                        <ExternalLink size={13} />
+                        {page.is_published ? 'Open page' : 'Preview'}
+                    </a>
+                )}
 
-            <Button onClick={onSave} loading={saving}><Save size={14} /> Save</Button>
+                <Button onClick={onSave} loading={saving} className="!py-1.5 !px-3 !text-xs">
+                    <Save size={13} /> Save
+                </Button>
+            </div>
         </div>
     );
 }

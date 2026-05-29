@@ -35,7 +35,7 @@ function LibraryItem({ type }) {
             {...listeners}
             {...attributes}
             onClick={() => addComponent(type)}
-            className={`text-left text-xs px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/30 transition-colors cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
+                        className={`text-left text-xs px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-[var(--offer-primary)] hover:bg-[var(--offer-primary-light)] transition-colors cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
         >
             <Plus size={10} className="inline mr-1 opacity-50" />
             {COMPONENT_LABELS[type] || type}

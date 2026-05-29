@@ -1,25 +1,39 @@
-import { useEffect } from 'react';
-import { DndContext, PointerSensor, useSensor, useSensors, closestCenter, DragOverlay } from '@dnd-kit/core';
-import { useState } from 'react';
-import ComponentLibrary from './ComponentLibrary';
-import BuilderCanvas, { usePanelResize } from './BuilderCanvas';
-import PropertyPanel from './PropertyPanel';
+import { useEffect, useState } from 'react';
+import {
+    DndContext, PointerSensor, useSensor, useSensors, closestCenter, DragOverlay,
+} from '@dnd-kit/core';
+import { Link } from '@inertiajs/react';
+import { ArrowLeft } from 'lucide-react';
+import CanvasEditor from './CanvasEditor';
+import WidgetPanel from './WidgetPanel';
+import LayersPanel from './LayersPanel';
+import InspectorPanel from './InspectorPanel';
 import BuilderToolbar from './BuilderToolbar';
+import PanelTabs from './PanelTabs';
 import { useBuilderStore } from '../store/builderStore';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useBuilderKeyboard } from '../hooks/useBuilderKeyboard';
-import { normalizeSchema } from '../schema/migrate';
-import { ensureNodeIds } from '../schema/migrate';
+import { usePanelResize } from '../hooks/usePanelResize';
+import { normalizeSchema, ensureNodeIds } from '../schema/migrate';
 import { COMPONENT_LABELS } from '../registry/components';
+import { themeToCssVars } from '../schema/themeTokens';
+import { getCanvasBlocks, parseInsertDropId } from '../utils/builderTree';
+import { getComponentIcon } from '../registry/icons';
 
 export default function LandingPageBuilder({
-    page, catalog, product, onSave, saving, pageSettings,
+    page, catalog, product, onSave, saving, pageSettings, backHref,
 }) {
     const init = useBuilderStore((s) => s.init);
     const addComponent = useBuilderStore((s) => s.addComponent);
-    const left = usePanelResize(260);
-    const right = usePanelResize(300);
-    const [dragType, setDragType] = useState(null);
+    const reorderCanvasBlocks = useBuilderStore((s) => s.reorderCanvasBlocks);
+    const select = useBuilderStore((s) => s.select);
+    const left = usePanelResize(280);
+    const right = usePanelResize(320);
+    const [leftTab, setLeftTab] = useState('widgets');
+    const [dragging, setDragging] = useState(null);
+
+    const theme = useBuilderStore((s) => s.theme);
+    const cssVars = themeToCssVars(theme);
 
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -35,62 +49,113 @@ export default function LandingPageBuilder({
     useAutoSave(page.id);
     useBuilderKeyboard();
 
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        setDragging(null);
+        if (!over) return;
+
+        const activeData = active.data.current;
+        const overData = over.data.current;
+
+        if (activeData?.fromLibrary) {
+            const type = activeData.type;
+            const insert = parseInsertDropId(String(over.id));
+            if (insert) {
+                addComponent(type, null, insert.index);
+            } else if (over.id === 'canvas-drop') {
+                addComponent(type);
+            }
+            return;
+        }
+
+        if (activeData?.sortable) {
+            const blocks = getCanvasBlocks(useBuilderStore.getState().roots);
+            const fromIndex = blocks.findIndex((b) => b.id === active.id);
+            if (fromIndex < 0) return;
+
+            let toIndex = fromIndex;
+            const insert = parseInsertDropId(String(over.id));
+            if (insert) {
+                toIndex = insert.index;
+                if (fromIndex < toIndex) toIndex -= 1;
+            } else if (overData?.sortable) {
+                toIndex = blocks.findIndex((b) => b.id === over.id);
+            }
+
+            if (toIndex >= 0 && fromIndex !== toIndex) {
+                reorderCanvasBlocks(fromIndex, toIndex);
+            }
+        }
+    };
+
+    const DragIcon = dragging?.type ? getComponentIcon(dragging.type) : null;
+
     return (
-        <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 sm:-mx-6 lg:-mx-8 border rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950">
-            <BuilderToolbar onSave={onSave} saving={saving} page={page} />
+        <div className="flex flex-col h-[calc(100vh-7rem)] border rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-950 shadow-sm" style={cssVars}>
+            <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-white dark:bg-slate-900 shrink-0">
+                {backHref && (
+                    <Link href={backHref} className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 shrink-0" title="Back to pages">
+                        <ArrowLeft size={18} />
+                    </Link>
+                )}
+                <div className="min-w-0 mr-2 hidden sm:block">
+                    <p className="text-sm font-bold truncate">{page.name}</p>
+                    <p className="text-[10px] text-slate-400 truncate">/offer/{page.slug}</p>
+                </div>
+                <div className="flex-1 min-w-0">
+                    <BuilderToolbar onSave={onSave} saving={saving} page={page} embedded />
+                </div>
+            </div>
 
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
-                onDragStart={(e) => setDragType(e.active.data.current?.type || null)}
-                onDragEnd={(e) => {
-                    if (e.active.data.current?.fromLibrary) {
-                        addComponent(e.active.data.current.type);
-                    }
-                    setDragType(null);
+                onDragStart={(e) => {
+                    const data = e.active.data.current;
+                    setDragging(data?.fromLibrary ? { type: data.type, fromLibrary: true } : { type: null, blockId: e.active.id });
                 }}
+                onDragEnd={handleDragEnd}
+                onDragCancel={() => setDragging(null)}
             >
+                <div className="flex flex-1 min-h-0 flex-col">
                 <div className="flex flex-1 min-h-0">
-                    {/* Left — Component library */}
                     <aside style={{ width: left.width }} className="shrink-0 border-r bg-white dark:bg-slate-900 flex flex-col min-h-0">
-                        <div className="px-3 py-2 border-b text-xs font-bold text-slate-500">Library</div>
-                        <ComponentLibrary />
+                        <PanelTabs
+                            tabs={[
+                                { id: 'widgets', label: 'Widgets' },
+                                { id: 'layers', label: 'Layers' },
+                            ]}
+                            active={leftTab}
+                            onChange={setLeftTab}
+                        />
+                        <div className="flex-1 min-h-0 overflow-hidden">
+                            {leftTab === 'widgets' ? <WidgetPanel /> : <LayersPanel />}
+                        </div>
                     </aside>
-                    <div role="separator" onMouseDown={(e) => left.onMouseDown(e, 1)} className="w-1 shrink-0 cursor-col-resize hover:bg-teal-400/30 bg-transparent" />
 
-                    {/* Center — Live canvas */}
-                    <main className="flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col">
-                        <CanvasInner catalog={catalog} product={product} />
+                    <div role="separator" onMouseDown={(e) => left.onMouseDown(e, 1)} className="w-1 shrink-0 cursor-col-resize hover:bg-[var(--offer-primary)]/30 bg-transparent" title="Resize panel" />
+
+                    <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-slate-200/60 dark:bg-slate-900/40" onClick={() => select(null)}>
+                        <CanvasEditor catalog={catalog} product={product} dragActive={!!dragging} />
                     </main>
 
-                    <div role="separator" onMouseDown={(e) => right.onMouseDown(e, -1)} className="w-1 shrink-0 cursor-col-resize hover:bg-teal-400/30 bg-transparent" />
+                    <div role="separator" onMouseDown={(e) => right.onMouseDown(e, -1)} className="w-1 shrink-0 cursor-col-resize hover:bg-[var(--offer-primary)]/30 bg-transparent" title="Resize panel" />
 
-                    {/* Right — Properties */}
                     <aside style={{ width: right.width }} className="shrink-0 border-l bg-white dark:bg-slate-900 min-h-0 overflow-hidden flex flex-col">
-                        <div className="px-3 py-2 border-b text-xs font-bold text-slate-500">Properties</div>
-                        <div className="flex-1 overflow-y-auto">
-                            <PropertyPanel catalog={catalog} />
-                        </div>
-                        {pageSettings}
+                        <InspectorPanel catalog={catalog} pageSettings={pageSettings} />
                     </aside>
                 </div>
 
-                <DragOverlay>
-                    {dragType ? (
-                        <div className="px-3 py-2 bg-teal-600 text-white text-xs rounded-lg shadow-xl">
-                            {COMPONENT_LABELS[dragType] || dragType}
+                <DragOverlay dropAnimation={null}>
+                    {dragging?.fromLibrary && dragging.type ? (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--offer-primary)] text-white text-xs rounded-lg shadow-xl">
+                            {DragIcon && <DragIcon size={14} />}
+                            {COMPONENT_LABELS[dragging.type] || dragging.type}
                         </div>
                     ) : null}
                 </DragOverlay>
+                </div>
             </DndContext>
-        </div>
-    );
-}
-
-function CanvasInner({ catalog, product }) {
-    return (
-        <div className="flex-1 overflow-auto">
-            <BuilderCanvas catalog={catalog} product={product} />
         </div>
     );
 }

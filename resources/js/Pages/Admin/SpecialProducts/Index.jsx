@@ -1,15 +1,78 @@
-import { useForm, router } from '@inertiajs/react';
+import { useForm, router, Link } from '@inertiajs/react';
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, ExternalLink, Layout } from 'lucide-react';
-import { Link } from '@inertiajs/react';
+import { Plus, Trash2, ExternalLink, Layout } from 'lucide-react';
+import clsx from 'clsx';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
 import Input from '../../../Components/UI/Input';
 import Select from '../../../Components/UI/Select';
-import Badge from '../../../Components/UI/Badge';
 import FlashMessage from '../../../Components/UI/FlashMessage';
 import Pagination from '../../../Components/UI/Pagination';
 import { Card, CardBody } from '../../../Components/UI/Card';
+
+const STATUS_OPTIONS = [
+    { value: 'draft', label: 'Draft' },
+    { value: 'published', label: 'Published' },
+    { value: 'scheduled', label: 'Scheduled' },
+];
+
+const STATUS_STYLES = {
+    draft: 'border-slate-200 bg-slate-50 text-slate-700',
+    published: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    scheduled: 'border-amber-200 bg-amber-50 text-amber-800',
+};
+
+function pageStatus(page) {
+    return page.status ?? (page.is_published ? 'published' : 'draft');
+}
+
+function StatusCell({ page }) {
+    const status = pageStatus(page);
+    const [processing, setProcessing] = useState(false);
+
+    const patch = (payload) => {
+        setProcessing(true);
+        router.patch(`/admin/special-products/${page.id}/status`, payload, {
+            preserveScroll: true,
+            onFinish: () => setProcessing(false),
+        });
+    };
+
+    const scheduledValue = page.scheduled_at
+        ? new Date(page.scheduled_at).toISOString().slice(0, 16)
+        : '';
+
+    return (
+        <div className="min-w-[140px]">
+            <select
+                value={status}
+                disabled={processing}
+                onChange={(e) => patch({ status: e.target.value, scheduled_at: page.scheduled_at })}
+                className={clsx(
+                    'w-full text-xs font-semibold rounded-lg border px-2 py-1.5 cursor-pointer',
+                    'disabled:opacity-50 disabled:cursor-wait',
+                    STATUS_STYLES[status] || STATUS_STYLES.draft,
+                )}
+            >
+                {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+            </select>
+            {status === 'scheduled' && (
+                <input
+                    type="datetime-local"
+                    disabled={processing}
+                    value={scheduledValue}
+                    onChange={(e) => patch({
+                        status: 'scheduled',
+                        scheduled_at: e.target.value || null,
+                    })}
+                    className="mt-1.5 w-full text-[11px] rounded-lg border border-amber-200 px-2 py-1 bg-white"
+                />
+            )}
+        </div>
+    );
+}
 
 export default function SpecialProductsIndex({ pages, products }) {
     const [creating, setCreating] = useState(false);
@@ -78,13 +141,11 @@ export default function SpecialProductsIndex({ pages, products }) {
                                     <td className="px-6 py-3">{p.product?.name}</td>
                                     <td className="px-6 py-3 tabular-nums">{p.orders_count ?? 0}</td>
                                     <td className="px-6 py-3">
-                                        <Badge variant={p.is_published ? 'success' : 'default'}>
-                                            {p.is_published ? 'Live' : 'Draft'}
-                                        </Badge>
+                                        <StatusCell page={p} />
                                     </td>
                                     <td className="px-6 py-3 text-right">
                                         <div className="flex justify-end gap-1">
-                                            {p.is_published && (
+                                            {(p.is_published || pageStatus(p) === 'published') && (
                                                 <a href={`/offer/${p.slug}`} target="_blank" rel="noreferrer" className="p-2 hover:bg-slate-100 rounded-lg" title="View live">
                                                     <ExternalLink size={14} />
                                                 </a>

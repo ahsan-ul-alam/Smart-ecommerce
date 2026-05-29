@@ -1,5 +1,5 @@
-import { useForm, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { useForm, router } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
 import Input from '../../../Components/UI/Input';
@@ -68,7 +68,7 @@ export default function SpecialProductsEdit({ page, products, catalog, versions 
     };
 
     const pageSettings = (
-        <div className="p-4 border-t space-y-3 text-sm">
+        <div className="p-4 space-y-3 text-sm">
             <p className="text-xs font-bold uppercase text-slate-400">Page & SEO</p>
             <Input label="Name" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} />
             <Input label="Slug" value={form.data.slug} onChange={(e) => form.setData('slug', e.target.value)} />
@@ -102,14 +102,6 @@ export default function SpecialProductsEdit({ page, products, catalog, versions 
     return (
         <AdminLayout title={`Builder: ${page.name}`}>
             <FlashMessage />
-            <div className="flex items-center gap-3 mb-4">
-                <Link href="/admin/special-products" className="p-2 rounded-lg hover:bg-slate-100"><ArrowLeft size={20} /></Link>
-                <div>
-                    <h2 className="text-lg font-bold">Landing Page Builder</h2>
-                    <p className="text-xs text-slate-500">/offer/{page.slug} · Elementor-style editor</p>
-                </div>
-            </div>
-
             <LandingPageBuilder
                 page={page}
                 catalog={catalog}
@@ -117,6 +109,7 @@ export default function SpecialProductsEdit({ page, products, catalog, versions 
                 onSave={save}
                 saving={form.processing}
                 pageSettings={pageSettings}
+                backHref="/admin/special-products"
             />
         </AdminLayout>
     );

@@ -32,13 +32,25 @@ class SpecialProductController extends Controller
             ->with(['product.images', 'product.variants'])
             ->firstOrFail();
 
+        return $this->renderPage($page);
+    }
+
+    public function showPreview(SpecialProduct $page): Response
+    {
+        $page->load(['product.images', 'product.variants']);
+
+        return $this->renderPage($page, draftPreview: true);
+    }
+
+    protected function renderPage(SpecialProduct $page, bool $draftPreview = false): Response
+    {
         $product = $page->product;
         $product->loadMissing('variants');
         $activeVariants = $product->variants->where('is_active', true);
         $defaultVariant = $activeVariants->first();
         $qty = 1;
 
-        $preview = $this->offerOrders->previewTotals($product, $defaultVariant, $qty, null);
+        $initialTotals = $this->offerOrders->previewTotals($product, $defaultVariant, $qty, null);
 
         $schema = $this->builder->resolveSchema($page);
         $catalog = $this->catalog->resolveForSchema($schema);
@@ -63,8 +75,9 @@ class SpecialProductController extends Controller
             'checkout' => [
                 'divisions' => $this->locations->divisions(),
                 'paymentMethods' => $this->payments->enabledPaymentMethods(),
-                'initialTotals' => $preview,
+                'initialTotals' => $initialTotals,
             ],
+            'draftPreview' => $draftPreview,
         ]);
     }
 }

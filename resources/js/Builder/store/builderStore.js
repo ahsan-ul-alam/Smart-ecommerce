@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { cloneNode, findNode, walkNodes } from '../schema/defaults';
+import { mergeTheme } from '../schema/themeTokens';
 import { createComponent, LAYOUT_TYPES } from '../registry/components';
+import { ensurePageStructure, getPrimaryContainerId, getCanvasBlocks, findBlockLocation } from '../utils/builderTree';
 
 const MAX_HISTORY = 50;
 
@@ -84,14 +86,17 @@ export const useBuilderStore = create((set, get) => ({
     isDirty: false,
     lastSavedAt: null,
 
-    init: (schema) => set({
-        roots: schema.roots || [],
-        theme: schema.theme || {},
-        selectedIds: [],
-        past: [],
-        future: [],
-        isDirty: false,
-    }),
+    init: (schema) => {
+        const roots = ensurePageStructure(schema.roots || []);
+        set({
+            roots,
+            theme: mergeTheme(schema.theme || {}),
+            selectedIds: [],
+            past: [],
+            future: [],
+            isDirty: false,
+        });
+    },
 
     setTheme: (theme) => set((s) => ({ ...pushHistory(s), theme, isDirty: true })),
 
@@ -130,71 +135,83 @@ export const useBuilderStore = create((set, get) => ({
         isDirty: true,
     })),
 
-    addComponent: (type, parentId = null, index = -1) => {
-        const resolved = type === 'section' ? createComponent('section') : createComponent(type);
-        const state = get();
+    addComponentAt: (type, parentId, index) => {
+        const node = createComponent(type);
+        set((s) => ({
+            ...pushHistory(s),
+            roots: insertIntoTree(s.roots, parentId, node, index),
+            selectedIds: [node.id],
+            isDirty: true,
+        }));
+        return node.id;
+    },
 
-        const wrapInPage = (node) => {
+    addComponent: (type, parentId = null, index = -1) => {
+        const state = get();
+        let roots = ensurePageStructure(state.roots);
+        const containerId = parentId || getPrimaryContainerId(roots);
+
+        if (type === 'section') {
+            const section = createComponent('section');
+            const container = createComponent('container');
+            section.children = [container];
+            set((s) => ({
+                ...pushHistory(s),
+                roots: [...ensurePageStructure(s.roots), section],
+                selectedIds: [section.id],
+                isDirty: true,
+            }));
+            return section.id;
+        }
+
+        const node = createComponent(type);
+
+        if (!containerId) {
             const section = createComponent('section');
             const container = createComponent('container');
             container.children = [node];
             section.children = [container];
-            return section;
-        };
-
-        if (type === 'section' && !parentId) {
             set((s) => ({
                 ...pushHistory(s),
-                roots: [...s.roots, resolved],
-                selectedIds: [resolved.id],
+                roots: [section],
+                selectedIds: [node.id],
                 isDirty: true,
             }));
-            return resolved.id;
+            return node.id;
         }
 
-        let targetParent = parentId;
-        if (!targetParent) {
-            targetParent = state.findDropTarget(type);
-        }
-
-        if (!targetParent && state.roots.length === 0 && !LAYOUT_TYPES.includes(resolved.type)) {
-            const wrapped = wrapInPage(resolved);
-            set((s) => ({
-                ...pushHistory(s),
-                roots: [wrapped],
-                selectedIds: [resolved.id],
-                isDirty: true,
-            }));
-            return resolved.id;
-        }
-
-        if (!targetParent && LAYOUT_TYPES.includes(resolved.type)) {
-            set((s) => ({
-                ...pushHistory(s),
-                roots: [...s.roots, resolved],
-                selectedIds: [resolved.id],
-                isDirty: true,
-            }));
-            return resolved.id;
-        }
-
+        const insertIndex = index >= 0 ? index : getCanvasBlocks(roots).length;
         set((s) => ({
             ...pushHistory(s),
-            roots: insertIntoTree(s.roots, targetParent, resolved, index),
-            selectedIds: [resolved.id],
+            roots: insertIntoTree(ensurePageStructure(s.roots), containerId, node, insertIndex),
+            selectedIds: [node.id],
             isDirty: true,
         }));
-        return resolved.id;
+        return node.id;
     },
 
-    findDropTarget: (type) => {
-        const { roots, selectedIds } = get();
-        const selected = selectedIds[0] ? findNode(roots, selectedIds[0]) : null;
-        if (selected && LAYOUT_TYPES.includes(selected.type)) return selected.id;
-        if (LAYOUT_TYPES.includes(type)) return null;
-        const section = roots[roots.length - 1];
-        if (section?.children?.[0]) return section.children[0].id;
-        return null;
+    reorderCanvasBlocks: (fromIndex, toIndex) => {
+        const containerId = getPrimaryContainerId(get().roots);
+        if (!containerId || fromIndex === toIndex) return;
+        set((s) => ({
+            ...pushHistory(s),
+            roots: updateTree(s.roots, containerId, (node) => {
+                const children = [...(node.children || [])];
+                const [item] = children.splice(fromIndex, 1);
+                children.splice(toIndex, 0, item);
+                return { ...node, children };
+            }),
+            isDirty: true,
+        }));
+    },
+
+    moveBlockBefore: (blockId, targetBlockId) => {
+        const loc = findBlockLocation(get().roots, blockId);
+        const targetLoc = findBlockLocation(get().roots, targetBlockId);
+        if (!loc || !targetLoc || loc.parentId !== targetLoc.parentId) return;
+        let toIndex = targetLoc.index;
+        if (loc.index < toIndex) toIndex -= 1;
+        get().moveNode(blockId, loc.parentId, toIndex);
     },
 
     removeNode: (nodeId) => set((s) => ({
@@ -262,9 +279,10 @@ export const useBuilderStore = create((set, get) => ({
         const { clipboard } = get();
         if (!clipboard) return;
         const copy = cloneNode(clipboard);
+        const containerId = parentId ?? getPrimaryContainerId(get().roots);
         set((s) => ({
             ...pushHistory(s),
-            roots: insertIntoTree(s.roots, parentId ?? s.findDropTarget(copy.type), copy),
+            roots: insertIntoTree(ensurePageStructure(s.roots), containerId, copy),
             selectedIds: [copy.id],
             isDirty: true,
         }));
@@ -272,8 +290,8 @@ export const useBuilderStore = create((set, get) => ({
 
     importSchema: (schema) => set({
         ...pushHistory(get()),
-        roots: schema.roots || [],
-        theme: schema.theme || get().theme,
+        roots: ensurePageStructure(schema.roots || []),
+        theme: mergeTheme(schema.theme || {}),
         selectedIds: [],
         isDirty: true,
     }),
@@ -304,7 +322,7 @@ export const useBuilderStore = create((set, get) => ({
         };
     }),
 
-    getSchema: () => ({ version: 2, theme: get().theme, roots: get().roots }),
+    getSchema: () => ({ version: 2, theme: mergeTheme(get().theme), roots: get().roots }),
 
     markSaved: () => set({ isDirty: false, lastSavedAt: new Date().toISOString() }),
 }));
