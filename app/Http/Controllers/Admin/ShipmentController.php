@@ -57,10 +57,18 @@ class ShipmentController extends Controller
         $courier = $this->integrations->resolveCourier($shipment->courier);
         $result = $courier->trackShipment($shipment->tracking_id);
 
+        if (! empty($result['message']) && in_array($result['status'] ?? '', ['unknown', 'failed'], true)) {
+            return back()->with('error', $result['message']);
+        }
+
         $shipment->update([
             'status' => $result['status'] ?? $shipment->status,
             'meta' => array_merge($shipment->meta ?? [], ['last_track' => $result]),
         ]);
+
+        if (! empty($result['message'])) {
+            return back()->with('success', $result['message']);
+        }
 
         return back()->with('success', 'Tracking updated from '.$shipment->courier);
     }

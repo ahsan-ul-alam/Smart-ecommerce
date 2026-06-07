@@ -54,10 +54,13 @@ class CommerceSeeder extends Seeder
             ->where('provider', 'nagad')
             ->update(['is_enabled' => true, 'is_sandbox' => true]);
 
-        Integration::query()
+        $aamarpay = Integration::query()
             ->where('type', IntegrationType::Payment)
             ->where('provider', 'aamarpay')
-            ->update([
+            ->first();
+
+        if ($aamarpay) {
+            $aamarpay->update([
                 'is_enabled' => true,
                 'is_sandbox' => true,
                 'credentials' => [
@@ -65,6 +68,7 @@ class CommerceSeeder extends Seeder
                     'signature_key' => 'dbb74894e82415a2f7ff0ec3a97e4183',
                 ],
             ]);
+        }
 
         Integration::query()
             ->where('type', IntegrationType::Sms)

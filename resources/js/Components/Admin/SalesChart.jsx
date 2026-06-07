@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import clsx from 'clsx';
 
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD', { maximumFractionDigits: 0 })}`;
 
@@ -11,7 +12,7 @@ export default function SalesChart({ data = [], height = 220 }) {
 
     const values = useMemo(
         () => data.map((d) => (mode === 'revenue' ? d.revenue : d.orders)),
-        [data, mode]
+        [data, mode],
     );
     const max = Math.max(...values, 1);
 
@@ -32,11 +33,12 @@ export default function SalesChart({ data = [], height = 220 }) {
                         key={m}
                         type="button"
                         onClick={() => setMode(m)}
-                        className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition-premium ${
+                        className={clsx(
+                            'px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-premium',
                             mode === m
-                                ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                                : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
-                        }`}
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800',
+                        )}
                     >
                         {m}
                     </button>
@@ -63,13 +65,28 @@ export default function SalesChart({ data = [], height = 220 }) {
                         width={Math.max(8, innerW / data.length - 8)}
                         height={(p.v / max) * innerH * 0.85}
                         rx="4"
-                        className="fill-indigo-500/15"
+                        fill="color-mix(in srgb, var(--color-brand-primary) 18%, transparent)"
                     />
                 ))}
-                <path d={areaPath} className="fill-indigo-500/20" />
-                <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d={areaPath} fill="color-mix(in srgb, var(--color-brand-primary) 22%, transparent)" />
+                <path
+                    d={linePath}
+                    fill="none"
+                    stroke="var(--color-brand-primary)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
                 {points.map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r="4" className="fill-indigo-500 stroke-white dark:stroke-slate-800" strokeWidth="2" />
+                    <circle
+                        key={i}
+                        cx={p.x}
+                        cy={p.y}
+                        r="4"
+                        fill="var(--color-brand-primary)"
+                        className="stroke-white dark:stroke-slate-800"
+                        strokeWidth="2"
+                    />
                 ))}
                 {points.filter((_, i) => i % 2 === 0 || i === points.length - 1).map((p, i) => (
                     <text key={i} x={p.x} y={height - 6} textAnchor="middle" className="fill-slate-400 text-[10px]">

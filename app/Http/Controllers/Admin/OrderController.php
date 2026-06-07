@@ -7,6 +7,7 @@ use App\Domain\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
+use App\Models\PaymentTransaction;
 use App\Services\Audit\AuditLogService;
 use App\Services\Commerce\OrderService;
 use App\Services\Settings\SettingService;
@@ -46,12 +47,57 @@ class OrderController extends Controller
                 'value' => $key,
                 'label' => $label,
             ])->values(),
+            'paymentStatuses' => collect(PaymentStatus::cases())->map(fn ($s) => [
+                'value' => $s->value,
+                'label' => ucfirst($s->value),
+            ])->values()->all(),
         ]);
     }
 
     public function show(Order $order): Response
     {
-        $order->load(['items', 'statusHistories', 'user', 'shipment']);
+        $order->load([
+            'items.product.images',
+            'statusHistories.user',
+            'user',
+            'shipment',
+            'returnRequest',
+        ]);
+
+        $customerInsights = null;
+        if ($order->user_id) {
+            $previousOrder = Order::query()
+                ->where('user_id', $order->user_id)
+                ->where('id', '!=', $order->id)
+                ->latest()
+                ->first();
+
+            $customerInsights = [
+                'orders_count' => Order::query()->where('user_id', $order->user_id)->count(),
+                'total_spent' => (float) Order::query()
+                    ->where('user_id', $order->user_id)
+                    ->where('payment_status', PaymentStatus::Paid)
+                    ->sum('total'),
+                'last_order_at' => $previousOrder?->created_at?->toISOString(),
+            ];
+        }
+
+        $paymentTransaction = PaymentTransaction::query()
+            ->where('order_id', $order->id)
+            ->latest()
+            ->first();
+
+        $order->customer_insights = $customerInsights;
+        $order->payment_transaction = $paymentTransaction ? [
+            'provider' => $paymentTransaction->provider,
+            'payment_id' => $paymentTransaction->payment_id,
+            'trx_id' => $paymentTransaction->trx_id,
+            'amount' => (float) $paymentTransaction->amount,
+            'status' => $paymentTransaction->status,
+        ] : null;
+
+        $currentStatus = $order->status;
+        $defaultNext = $currentStatus?->defaultNext();
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => (new OrderResource($order))->resolve(),
@@ -59,6 +105,18 @@ class OrderController extends Controller
                 'value' => $key,
                 'label' => $label,
             ])->values(),
+            'workflowSteps' => collect(OrderStatus::workflowSteps())->map(fn ($s) => [
+                'value' => $s->value,
+                'label' => $s->label(),
+            ])->values()->all(),
+            'nextStatuses' => collect($currentStatus?->nextStatuses() ?? [])->map(fn ($s) => [
+                'value' => $s->value,
+                'label' => $s->label(),
+            ])->values()->all(),
+            'defaultNext' => $defaultNext ? [
+                'value' => $defaultNext->value,
+                'label' => $defaultNext->label(),
+            ] : null,
             'statuses' => collect(OrderStatus::cases())->map(fn ($s) => [
                 'value' => $s->value,
                 'label' => $s->label(),
@@ -70,24 +128,51 @@ class OrderController extends Controller
         ]);
     }
 
+    public function advanceStatus(Request $request, Order $order): RedirectResponse
+    {
+        $next = $order->status?->defaultNext();
+
+        if (! $next) {
+            return back()->with('error', 'This order cannot be advanced further.');
+        }
+
+        $oldStatus = $order->status?->value;
+        $this->orderService->updateStatus($order, $next, null, $request->user()->id);
+        $this->audit->log('order.status_changed', $order, ['status' => $oldStatus], ['status' => $next->value], $request);
+
+        return back()->with('success', "Order marked as {$next->label()}.");
+    }
+
     public function updateStatus(Request $request, Order $order): RedirectResponse
     {
         $request->validate([
             'status' => ['required', 'string'],
             'note' => ['nullable', 'string', 'max:500'],
+            'force' => ['nullable', 'boolean'],
         ]);
 
         $oldStatus = $order->status?->value;
-        $this->orderService->updateStatus(
-            $order,
-            OrderStatus::from($request->status),
-            $request->note,
-            $request->user()->id
-        );
+        $newStatus = OrderStatus::from($request->status);
+
+        try {
+            $this->orderService->updateStatus(
+                $order,
+                $newStatus,
+                $request->note,
+                $request->user()->id,
+                $request->boolean('force'),
+            );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
 
         $this->audit->log('order.status_changed', $order, ['status' => $oldStatus], ['status' => $request->status], $request);
 
-        return back()->with('success', 'Order status updated.');
+        if ($oldStatus === $request->status) {
+            return back()->with('success', 'Order status is already '.$newStatus->label().'.');
+        }
+
+        return back()->with('success', 'Order status updated to '.$newStatus->label().'.');
     }
 
     public function updatePayment(Request $request, Order $order): RedirectResponse

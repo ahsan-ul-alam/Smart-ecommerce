@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\MediaUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,10 +21,19 @@ class OrderResource extends JsonResource
                 'id' => $this->user->id,
                 'name' => $this->user->name,
                 'email' => $this->user->email,
+                'phone' => $this->user->phone,
             ]),
+            'customer_phone' => $this->guest_phone ?? $this->user?->phone,
+            'customer_email' => $this->guest_email ?? $this->user?->email,
             'status' => $this->status?->value,
             'status_label' => $this->status?->label(),
+            'default_next_status' => $this->status?->defaultNext()?->value,
+            'default_next_label' => $this->status?->defaultNext()?->label(),
+            'is_terminal' => $this->status?->isTerminal() ?? false,
             'payment_status' => $this->payment_status?->value,
+            'payment_status_label' => $this->payment_status ? ucfirst($this->payment_status->value) : null,
+            'payment_reference' => $this->payment_reference,
+            'paid_at' => $this->paid_at?->toISOString(),
             'payment_method' => $this->payment_method?->value,
             'payment_method_label' => $this->payment_method?->label(),
             'subtotal' => (float) $this->subtotal,
@@ -37,14 +47,28 @@ class OrderResource extends JsonResource
             'shipping_address' => $this->shipping_address,
             'customer_note' => $this->customer_note,
             'admin_note' => $this->admin_note,
-            'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
-                'id' => $item->id,
-                'product_name' => $item->product_name,
-                'product_sku' => $item->product_sku,
-                'quantity' => $item->quantity,
-                'unit_price' => (float) $item->unit_price,
-                'total' => (float) $item->total,
-            ])),
+            'items_count' => $this->whenLoaded('items', fn () => (int) $this->items->sum('quantity')),
+            'items' => $this->whenLoaded('items', fn () => $this->items->map(function ($item) {
+                $image = null;
+                if ($item->relationLoaded('product') && $item->product?->relationLoaded('images')) {
+                    $primary = $item->product->images->firstWhere('is_primary', true)
+                        ?? $item->product->images->first();
+                    $image = MediaUrl::resolve($primary?->path);
+                }
+
+                return [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'product_slug' => $item->relationLoaded('product') ? $item->product?->slug : null,
+                    'product_name' => $item->product_name,
+                    'product_sku' => $item->product_sku,
+                    'variant_name' => $item->variant_name,
+                    'image' => $image,
+                    'quantity' => $item->quantity,
+                    'unit_price' => (float) $item->unit_price,
+                    'total' => (float) $item->total,
+                ];
+            })),
             'shipment' => $this->whenLoaded('shipment', fn () => [
                 'courier' => $this->shipment->courier,
                 'tracking_id' => $this->shipment->tracking_id,
@@ -68,9 +92,12 @@ class OrderResource extends JsonResource
                 'status' => $h->status?->value,
                 'status_label' => $h->status?->label(),
                 'note' => $h->note,
+                'user_name' => $h->relationLoaded('user') ? ($h->user?->name ?? 'System') : 'System',
                 'created_at' => $h->created_at?->toISOString(),
             ])),
             'created_at' => $this->created_at?->toISOString(),
+            'customer_insights' => $this->when(isset($this->customer_insights), fn () => $this->customer_insights),
+            'payment_transaction' => $this->when(isset($this->payment_transaction), fn () => $this->payment_transaction),
         ];
     }
 }

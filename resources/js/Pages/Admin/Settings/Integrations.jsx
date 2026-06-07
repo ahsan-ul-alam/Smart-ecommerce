@@ -125,6 +125,13 @@ export default function Integrations({ type, integrations }) {
         <AdminLayout title={`Integrations — ${type}`}>
             <FlashMessage />
 
+            {type === 'payment' && (
+                <p className="mb-4 max-w-3xl text-sm text-slate-600 dark:text-slate-400">
+                    Turn on <strong>Active</strong> for each gateway you want customers to see at checkout.
+                    Sandbox mode works without live API keys.
+                </p>
+            )}
+
             <div className="grid gap-4 max-w-3xl">
                 {integrations.map((integration) => (
                     <Card key={integration.id}>
@@ -140,6 +147,19 @@ export default function Integrations({ type, integrations }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 mr-1">
+                                        <input
+                                            type="checkbox"
+                                            checked={!!integration.is_enabled}
+                                            onChange={(e) => router.patch(
+                                                `/admin/integrations/${integration.id}`,
+                                                { is_enabled: e.target.checked },
+                                                { preserveScroll: true },
+                                            )}
+                                            className="rounded"
+                                        />
+                                        Active
+                                    </label>
                                     <Badge variant={integration.is_sandbox ? 'warning' : 'success'}>
                                         {integration.is_sandbox ? 'Sandbox' : 'Live'}
                                     </Badge>

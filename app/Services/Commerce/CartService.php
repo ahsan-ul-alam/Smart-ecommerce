@@ -95,16 +95,32 @@ class CartService
 
     public function applyCoupon(Cart $cart, string $code): Cart
     {
-        $coupon = Coupon::query()->where('code', strtoupper($code))->first();
+        $code = strtoupper(trim($code));
 
-        if (! $coupon) {
-            throw ValidationException::withMessages(['coupon' => 'Invalid coupon code.']);
+        if ($code === '') {
+            throw ValidationException::withMessages(['code' => 'Please enter a coupon code.']);
         }
 
-        $totals = $this->calculateTotals($cart);
+        $cart->loadMissing('items');
 
-        if (! $coupon->isValid($totals['subtotal'])) {
-            throw ValidationException::withMessages(['coupon' => 'This coupon is not valid for your cart.']);
+        if ($cart->items->isEmpty()) {
+            throw ValidationException::withMessages(['code' => 'Add items to your cart before applying a coupon.']);
+        }
+
+        $coupon = Coupon::query()->where('code', $code)->first();
+
+        if (! $coupon) {
+            throw ValidationException::withMessages(['code' => 'Invalid coupon code. Please check and try again.']);
+        }
+
+        if ($cart->coupon_id === $coupon->id) {
+            throw ValidationException::withMessages(['code' => 'This coupon is already applied to your cart.']);
+        }
+
+        $subtotal = $cart->items->sum(fn ($item) => $item->lineTotal());
+
+        if ($message = $coupon->validationMessage($subtotal)) {
+            throw ValidationException::withMessages(['code' => $message]);
         }
 
         $cart->update(['coupon_id' => $coupon->id]);

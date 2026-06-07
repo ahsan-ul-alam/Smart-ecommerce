@@ -6,7 +6,7 @@ import {
     Truck, ShieldCheck, Package, Heart, ChevronDown, Mail,
 } from 'lucide-react';
 import clsx from 'clsx';
-import FlashMessage from '../Components/UI/FlashMessage';
+import ToastProvider from '../Components/UI/ToastProvider';
 import ApplyThemeBranding from '../Components/ApplyThemeBranding';
 import MiniCartDrawer from '../Components/Shop/MiniCartDrawer';
 import CampaignPopup from '../Components/Shop/CampaignPopup';
@@ -18,7 +18,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
     useSyncLocale();
     const { t } = useTranslation();
     const {
-        app, auth, cart, footerPages = [], modules = [], theme = {}, branding = {},
+        app, auth, cartSummary, footerPages = [], modules = [], theme = {}, branding = {},
         campaignPopup, url, shopNav = {}, wishlistCount = 0,
     } = usePage().props;
     const categories = shopNav.categories ?? [];
@@ -42,7 +42,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
         { href: '/shop/contact', label: t('nav.contact') },
         { href: '/newsletter/unsubscribe', label: t('footer.newsletter') },
     ], [t]);
-    const itemCount = cart?.item_count ?? 0;
+    const itemCount = cartSummary?.item_count ?? 0;
     const newsletter = useForm({ email: '' });
     const [mobileMenu, setMobileMenu] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
@@ -87,9 +87,9 @@ export default function ShopLayout({ children, fullWidth = false }) {
     const storeEmail = branding.store_email;
 
     return (
+        <ToastProvider>
         <div className="min-h-screen shop-mesh-bg flex flex-col pb-20 md:pb-0">
             <ApplyThemeBranding />
-            <FlashMessage />
             {modules.includes('marketing_campaign') && <CampaignPopup campaign={campaignPopup} />}
 
             <div className="shop-top-bar hidden sm:block">
@@ -325,8 +325,14 @@ export default function ShopLayout({ children, fullWidth = false }) {
                 <div className="shop-container py-12 lg:py-14">
                     <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
                         <div className="sm:col-span-2 lg:col-span-1">
-                            <p className="font-bold text-lg text-slate-900 dark:text-white">{app.name}</p>
-                            {app.tagline && <p className="text-sm text-slate-500 mt-1">{app.tagline}</p>}
+                            {theme.logo ? (
+                                <img src={theme.logo} alt={app.name} className="h-10 w-auto max-w-[160px] object-contain" />
+                            ) : (
+                                <p className="font-bold text-lg text-slate-900 dark:text-white">{app.name}</p>
+                            )}
+                            {app.tagline && (
+                                <p className={clsx('text-sm text-slate-500', theme.logo ? 'mt-3' : 'mt-1')}>{app.tagline}</p>
+                            )}
                             <p className="text-xs text-slate-400 mt-4">© {new Date().getFullYear()} {t('footer.rights')}</p>
                         </div>
                         <div>
@@ -417,5 +423,6 @@ export default function ShopLayout({ children, fullWidth = false }) {
                 </div>
             </nav>
         </div>
+        </ToastProvider>
     );
 }

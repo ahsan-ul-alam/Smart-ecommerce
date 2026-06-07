@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SafeEncryptedArray;
 use App\Domain\Enums\IntegrationType;
 use Illuminate\Database\Eloquent\Model;
 
@@ -25,7 +26,7 @@ class Integration extends Model
             'type' => IntegrationType::class,
             'is_enabled' => 'boolean',
             'is_sandbox' => 'boolean',
-            'credentials' => 'encrypted:array',
+            'credentials' => SafeEncryptedArray::class,
             'config' => 'array',
             'webhook_config' => 'array',
         ];

@@ -24,6 +24,8 @@ class ContactController extends Controller
 
         return Inertia::render('Shop/Contact', [
             'store' => [
+                'name' => $branding['site_name'],
+                'tagline' => $branding['site_tagline'],
                 'email' => $branding['store_email'],
                 'phone' => $branding['store_phone'],
                 'address' => $branding['store_address'],

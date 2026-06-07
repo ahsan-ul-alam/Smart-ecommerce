@@ -1,30 +1,33 @@
+import { useEffect, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Minus, Plus, Trash2, Tag } from 'lucide-react';
-import { useState } from 'react';
+import { Minus, Plus, Trash2 } from 'lucide-react';
 import ShopLayout from '../../Layouts/ShopLayout';
 import ShopPageHeader from '../../Components/Shop/ShopPageHeader';
 import Button from '../../Components/UI/Button';
 import EmptyState from '../../Components/UI/EmptyState';
 import { ShoppingBag } from 'lucide-react';
-import Input from '../../Components/UI/Input';
+import PromoCodeForm from '../../Components/Shop/PromoCodeForm';
 import { Card, CardBody, CardHeader } from '../../Components/UI/Card';
 import ProductThumbnail from '../../Components/Catalog/ProductThumbnail';
 
 const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
 
-export default function Cart({ cart }) {
-    const [couponCode, setCouponCode] = useState('');
+export default function Cart({ cart: initialCart }) {
+    const [cart, setCart] = useState(initialCart);
+
+    useEffect(() => {
+        setCart(initialCart);
+    }, [initialCart]);
+
+    const handleCartUpdate = (updatedCart) => {
+        setCart(updatedCart);
+    };
 
     const updateQty = (itemId, quantity) => {
         router.patch(`/shop/cart/${itemId}`, { quantity }, { preserveScroll: true });
     };
 
     const removeItem = (itemId) => router.delete(`/shop/cart/${itemId}`, { preserveScroll: true });
-
-    const applyCoupon = (e) => {
-        e.preventDefault();
-        router.post('/shop/cart/coupon', { code: couponCode }, { preserveScroll: true });
-    };
 
     const { totals, items } = cart;
 
@@ -104,21 +107,9 @@ export default function Cart({ cart }) {
                             </Card>
 
                             <Card>
-                                <CardHeader title="Coupon Code" />
+                                <CardHeader title="Coupon Code" subtitle="Try WELCOME10 for 10% off orders over ৳500" />
                                 <CardBody>
-                                    {cart.coupon ? (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-medium text-green-700 flex items-center gap-1">
-                                                <Tag size={14} /> {cart.coupon.code}
-                                            </span>
-                                            <button type="button" onClick={() => router.delete('/shop/cart/coupon')} className="text-xs text-red-500">Remove</button>
-                                        </div>
-                                    ) : (
-                                        <form onSubmit={applyCoupon} className="flex gap-2">
-                                            <Input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="WELCOME10" className="flex-1" />
-                                            <Button type="submit" variant="secondary">Apply</Button>
-                                        </form>
-                                    )}
+                                    <PromoCodeForm cart={cart} onCartUpdate={handleCartUpdate} />
                                 </CardBody>
                             </Card>
                         </div>

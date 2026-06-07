@@ -79,10 +79,34 @@ class PathaoCourier extends BaseCourier
     public function trackShipment(string $trackingId): array
     {
         $credentials = $this->integration?->credentials ?? [];
+
+        if (str_starts_with($trackingId, 'PATHAO-DEMO-')) {
+            return [
+                'provider' => $this->getProvider(),
+                'tracking_id' => $trackingId,
+                'status' => 'demo',
+                'message' => 'Demo shipment — configure Pathao credentials in Admin → Settings → Couriers for live tracking.',
+            ];
+        }
+
+        if (! $this->hasCredentials($credentials)) {
+            return [
+                'provider' => $this->getProvider(),
+                'tracking_id' => $trackingId,
+                'status' => 'unknown',
+                'message' => 'Configure Pathao client_id, client_secret, username, and password in Admin → Settings → Couriers.',
+            ];
+        }
+
         $token = $this->grantToken($credentials);
 
         if (! $token) {
-            return ['provider' => $this->getProvider(), 'tracking_id' => $trackingId, 'status' => 'unknown'];
+            return [
+                'provider' => $this->getProvider(),
+                'tracking_id' => $trackingId,
+                'status' => 'unknown',
+                'message' => 'Pathao authentication failed. Check your courier credentials.',
+            ];
         }
 
         $response = Http::withToken($token)
@@ -100,7 +124,11 @@ class PathaoCourier extends BaseCourier
 
     protected function grantToken(array $credentials): ?string
     {
-        $cacheKey = 'pathao_token_'.md5($credentials['client_id'] ?? 'x');
+        if (! $this->hasCredentials($credentials)) {
+            return null;
+        }
+
+        $cacheKey = 'pathao_token_'.md5($credentials['client_id']);
 
         if ($cached = Cache::get($cacheKey)) {
             return $cached;

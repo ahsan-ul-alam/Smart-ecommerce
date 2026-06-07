@@ -26,27 +26,32 @@ class Coupon extends Model
 
     public function isValid(float $subtotal): bool
     {
+        return $this->validationMessage($subtotal) === null;
+    }
+
+    public function validationMessage(float $subtotal): ?string
+    {
         if (! $this->is_active) {
-            return false;
+            return 'This coupon is no longer active.';
         }
 
         if ($this->starts_at && $this->starts_at->isFuture()) {
-            return false;
+            return 'This coupon is not active yet.';
         }
 
         if ($this->expires_at && $this->expires_at->isPast()) {
-            return false;
-        }
-
-        if ($this->min_order_amount && $subtotal < $this->min_order_amount) {
-            return false;
+            return 'This coupon has expired.';
         }
 
         if ($this->max_uses && $this->used_count >= $this->max_uses) {
-            return false;
+            return 'This coupon has reached its usage limit.';
         }
 
-        return true;
+        if ($this->min_order_amount && $subtotal < (float) $this->min_order_amount) {
+            return 'Minimum order amount of ৳'.number_format((float) $this->min_order_amount, 0).' required for this coupon.';
+        }
+
+        return null;
     }
 
     public function calculateDiscount(float $subtotal): float

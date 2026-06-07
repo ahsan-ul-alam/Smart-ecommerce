@@ -17,10 +17,16 @@ class LoginController extends Controller
         protected CartService $cartService,
     ) {}
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $intended = (string) $request->session()->get('url.intended', '');
+        $portal = $request->query('portal') === 'admin' || str_contains($intended, '/admin')
+            ? 'admin'
+            : 'shop';
+
         return Inertia::render('Auth/Login', [
             'status' => session('status'),
+            'portal' => $portal,
         ]);
     }
 

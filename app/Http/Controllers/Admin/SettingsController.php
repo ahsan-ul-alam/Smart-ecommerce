@@ -243,7 +243,15 @@ class SettingsController extends Controller
             'integrations' => Integration::query()
                 ->where('type', $integrationType)
                 ->orderBy('priority')
-                ->get(),
+                ->get([
+                    'id',
+                    'type',
+                    'provider',
+                    'label',
+                    'is_enabled',
+                    'is_sandbox',
+                    'priority',
+                ]),
         ]);
     }
 }

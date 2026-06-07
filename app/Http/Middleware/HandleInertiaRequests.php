@@ -78,7 +78,7 @@ class HandleInertiaRequests extends Middleware
             },
             'branding' => fn () => $settings->branding(),
             'modules' => fn () => $modules->enabledKeys(),
-            'cart' => fn () => $this->sharedCartTotals($request),
+            'cartSummary' => fn () => $this->sharedCartTotals($request),
             'shopNav' => fn () => [
                 'categories' => Category::query()
                     ->where('is_active', true)
@@ -107,7 +107,7 @@ class HandleInertiaRequests extends Middleware
                     $request->routeIs('home') => 'home',
                     $request->routeIs('shop.products.*', 'shop.products') => 'shop',
                     $request->routeIs('shop.cart*') => 'cart',
-                    $request->routeIs('checkout*') => 'checkout',
+                    $request->routeIs('shop.checkout*') => 'checkout',
                     default => 'all',
                 };
 

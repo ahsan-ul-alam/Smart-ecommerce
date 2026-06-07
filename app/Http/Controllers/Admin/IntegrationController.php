@@ -21,7 +21,11 @@ class IntegrationController extends Controller
             'config' => ['sometimes', 'array'],
         ]);
 
-        $data = $request->only(['is_enabled', 'is_sandbox', 'priority', 'config']);
+        $data = $request->only(['is_sandbox', 'priority', 'config']);
+
+        if ($request->has('is_enabled')) {
+            $data['is_enabled'] = $request->boolean('is_enabled');
+        }
 
         if ($request->has('credentials')) {
             $existing = $integration->credentials ?? [];

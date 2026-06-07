@@ -165,8 +165,23 @@ class OrderService
         });
     }
 
-    public function updateStatus(Order $order, OrderStatus $status, ?string $note = null, ?int $userId = null): Order
-    {
+    public function updateStatus(
+        Order $order,
+        OrderStatus $status,
+        ?string $note = null,
+        ?int $userId = null,
+        bool $force = false,
+    ): Order {
+        if ($order->status === $status) {
+            return $order->fresh(['items', 'statusHistories', 'user', 'shipment']);
+        }
+
+        if (! $force && $order->status && ! $order->status->canTransitionTo($status)) {
+            throw ValidationException::withMessages([
+                'status' => "Cannot change status from {$order->status->label()} to {$status->label()}.",
+            ]);
+        }
+
         $order->update([
             'status' => $status,
             'delivered_at' => $status === OrderStatus::Delivered ? now() : $order->delivered_at,
@@ -178,7 +193,7 @@ class OrderService
 
         $this->recordStatus($order, $status, $note, $userId);
 
-        return $order->fresh(['items', 'statusHistories', 'user']);
+        return $order->fresh(['items', 'statusHistories', 'user', 'shipment']);
     }
 
     public function updatePaymentStatus(Order $order, PaymentStatus $status): Order

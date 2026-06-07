@@ -6,7 +6,6 @@ import {
     ShoppingCart,
     Users,
     Settings,
-    LogOut,
     Bell,
     Tag,
     Star,
@@ -19,10 +18,12 @@ import {
     Plus,
     Calendar,
     ChevronRight,
+    ExternalLink,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import ApplyThemeBranding from "../Components/ApplyThemeBranding";
+import AdminUserMenu from "../Components/Admin/AdminUserMenu";
 import LanguageSwitcher from "../Components/UI/LanguageSwitcher";
 import ThemeToggle from "../Components/UI/ThemeToggle";
 import { useSyncLocale } from "../hooks/useSyncLocale";
@@ -34,137 +35,63 @@ const AdminShellContext = createContext({
 
 export const useAdminShell = () => useContext(AdminShellContext);
 
-const navItems = [
+const navGroups = [
     {
-        href: "/admin",
-        icon: LayoutDashboard,
-        label: "nav.dashboard",
-        permission: "dashboard.view",
-        exact: true,
+        label: "Overview",
+        items: [
+            { href: "/admin", icon: LayoutDashboard, label: "nav.dashboard", permission: "dashboard.view", exact: true },
+            { href: "/admin/reports", icon: BarChart3, label: "Reports", permission: "reports.view", module: "analytics" },
+            { href: "/admin/alerts", icon: Bell, label: "Alerts", permission: "dashboard.view" },
+        ],
     },
     {
-        href: "/admin/products",
-        icon: Package,
-        label: "nav.products",
-        permission: "products.manage",
+        label: "Catalog",
+        items: [
+            { href: "/admin/products", icon: Package, label: "nav.products", permission: "products.manage" },
+            { href: "/admin/reviews", icon: Star, label: "Reviews", permission: "products.manage", module: "reviews" },
+            { href: "/admin/vendors", icon: Store, label: "Vendors", permission: "products.manage", module: "vendor" },
+        ],
     },
     {
-        href: "/admin/orders",
-        icon: ShoppingCart,
-        label: "nav.orders",
-        permission: "orders.manage",
+        label: "Sales",
+        items: [
+            { href: "/admin/orders", icon: ShoppingCart, label: "nav.orders", permission: "orders.manage" },
+            { href: "/admin/customers", icon: Users, label: "nav.customers", permission: "customers.manage" },
+        ],
     },
     {
-        href: "/admin/customers",
-        icon: Users,
-        label: "nav.customers",
-        permission: "customers.manage",
+        label: "Marketing",
+        items: [
+            { href: "/admin/coupons", icon: Tag, label: "Coupons", permission: "coupons.manage", module: "coupon" },
+            { href: "/admin/marketing-campaigns", icon: Tag, label: "Campaigns", permission: "coupons.manage", module: "marketing_campaign" },
+            { href: "/admin/flash-sales", icon: Zap, label: "Flash Sales", permission: "coupons.manage", module: "flash_sale" },
+            { href: "/admin/affiliates", icon: Tag, label: "Affiliates", permission: "customers.manage", module: "affiliate" },
+        ],
     },
     {
-        href: "/admin/special-products",
-        icon: Zap,
-        label: "Special Product",
-        permission: "cms.manage",
-        module: "special_product",
+        label: "Content",
+        items: [
+            { href: "/admin/cms/banners", icon: FileText, label: "CMS", permission: "cms.manage" },
+            { href: "/admin/special-products", icon: Zap, label: "Special Product", permission: "cms.manage", module: "special_product" },
+            { href: "/admin/newsletter", icon: Users, label: "Newsletter", permission: "customers.manage" },
+            { href: "/admin/contact-inquiries", icon: Users, label: "Contact", permission: "customers.manage" },
+        ],
     },
     {
-        href: "/admin/coupons",
-        icon: Tag,
-        label: "Coupons",
-        permission: "coupons.manage",
-        module: "coupon",
+        label: "System",
+        items: [
+            { href: "/admin/team", icon: Users, label: "Team", permissions: ["users.manage", "roles.manage"] },
+            { href: "/admin/settings/general", icon: Settings, label: "nav.settings", permission: "settings.manage" },
+        ],
     },
-    {
-        href: "/admin/marketing-campaigns",
-        icon: Tag,
-        label: "Campaigns",
-        permission: "coupons.manage",
-        module: "marketing_campaign",
-    },
-    {
-        href: "/admin/reports",
-        icon: BarChart3,
-        label: "Reports",
-        permission: "reports.view",
-        module: "analytics",
-    },
-    {
-        href: "/admin/cms/banners",
-        icon: FileText,
-        label: "CMS",
-        permission: "cms.manage",
-    },
-    {
-        href: "/admin/reviews",
-        icon: Star,
-        label: "Reviews",
-        permission: "products.manage",
-        module: "reviews",
-    },
-    {
-        href: "/admin/return-requests",
-        icon: ShoppingCart,
-        label: "Returns",
-        permission: "orders.manage",
-    },
-    {
-        href: "/admin/pos",
-        icon: Store,
-        label: "POS",
-        permission: "orders.manage",
-        module: "pos",
-    },
-    {
-        href: "/admin/affiliates",
-        icon: Tag,
-        label: "Affiliates",
-        permission: "customers.manage",
-    },
-    {
-        href: "/admin/abandoned-carts",
-        icon: ShoppingCart,
-        label: "Abandoned Carts",
-        permission: "orders.manage",
-        module: "abandoned_cart",
-    },
-    {
-        href: "/admin/flash-sales",
-        icon: Zap,
-        label: "Flash Sales",
-        permission: "coupons.manage",
-        module: "flash_sale",
-    },
-    {
-        href: "/admin/vendors",
-        icon: Users,
-        label: "Vendors",
-        permission: "products.manage",
-        module: "vendor",
-    },
-    {
-        href: "/admin/newsletter",
-        icon: Users,
-        label: "Newsletter",
-        permission: "customers.manage",
-    },
-    {
-        href: "/admin/contact-inquiries",
-        icon: Users,
-        label: "Contact",
-        permission: "customers.manage",
-    },
-    {
-        href: "/admin/team",
-        icon: Users,
-        label: "Team",
-        permissions: ["users.manage", "roles.manage"],
-    },
-    {
-        href: "/admin/settings/general",
-        icon: Settings,
-        label: "nav.settings",
-        permission: "settings.manage",
-    },
+];
+
+const orderLinks = [
+    { href: "/admin/orders", label: "All Orders" },
+    { href: "/admin/return-requests", label: "Returns" },
+    { href: "/admin/abandoned-carts", label: "Abandoned Carts", module: "abandoned_cart" },
+    { href: "/admin/pos", label: "POS", module: "pos" },
+    { href: "/admin/payment-transactions", label: "Payment Logs", permission: "settings.integrations" },
 ];
 
 const catalogLinks = [
@@ -250,17 +177,9 @@ function SubNav({ links, url, t, can }) {
 }
 
 function AdminTopBar({ title, showSearch, dateRange, can, alertCount = 0 }) {
-    const { auth } = usePage().props;
     const { collapsed, setCollapsed } = useAdminShell();
     const { t } = useTranslation();
     const isDashboard = showSearch;
-
-    const initials = auth.user?.name
-        ?.split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
 
     return (
         <header className="sticky top-0 z-30 h-[4.25rem] glass border-b border-slate-200/70 dark:border-slate-700/70 flex items-center gap-3 px-4 lg:px-6 shrink-0">
@@ -299,7 +218,7 @@ function AdminTopBar({ title, showSearch, dateRange, can, alertCount = 0 }) {
                             name="search"
                             type="search"
                             placeholder={t('admin.search_anything')}
-                            className="w-full pl-10 pr-20 py-2.5 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-slate-800/70 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition-premium"
+                            className="w-full pl-10 pr-20 py-2.5 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-slate-800/70 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 transition-premium"
                         />
                         <kbd className="hidden lg:inline absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">
                             Ctrl + K
@@ -353,9 +272,7 @@ function AdminTopBar({ title, showSearch, dateRange, can, alertCount = 0 }) {
                 >
                     <Settings size={18} className="text-slate-500" />
                 </Link>
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white text-xs font-bold flex items-center justify-center shadow-sm ml-1">
-                    {initials || "A"}
-                </div>
+                <AdminUserMenu />
             </div>
         </header>
     );
@@ -368,7 +285,7 @@ export default function AdminLayout({
     dateRange = null,
     alertCount = 0,
 }) {
-    const { auth, modules = [], theme = {}, app } = usePage().props;
+    const { auth, modules = [], theme = {}, branding = {}, app } = usePage().props;
     const { url } = usePage();
     useSyncLocale();
     const { t } = useTranslation();
@@ -403,10 +320,22 @@ export default function AdminLayout({
         return can(item.permission);
     };
 
-    const filteredNav = navItems.filter(
-        (item) =>
-            navCan(item) && (!item.module || modules.includes(item.module)),
-    );
+    const filterNavItem = (item) =>
+        navCan(item) && (!item.module || modules.includes(item.module));
+
+    const filteredNavGroups = navGroups
+        .map((group) => ({
+            ...group,
+            items: group.items.filter(filterNavItem),
+        }))
+        .filter((group) => group.items.length > 0);
+
+    const isOrderSection =
+        url.startsWith("/admin/orders") ||
+        url.startsWith("/admin/return-requests") ||
+        url.startsWith("/admin/abandoned-carts") ||
+        url.startsWith("/admin/pos") ||
+        url.startsWith("/admin/payment-transactions");
 
     return (
         <AdminShellContext.Provider value={{ collapsed, setCollapsed }}>
@@ -419,73 +348,120 @@ export default function AdminLayout({
                         collapsed ? "w-[5rem]" : "w-[17rem]",
                     )}
                 >
-                    <div
+                    <Link
+                        href="/admin"
                         className={clsx(
-                            "h-[4.25rem] flex items-center border-b border-slate-100 dark:border-slate-800",
+                            "h-[4.25rem] flex items-center border-b border-slate-100 dark:border-slate-800 shrink-0 hover:opacity-90 transition-opacity",
                             collapsed ? "justify-center px-2" : "px-5 gap-3",
                         )}
                     >
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
-                            {app?.name?.[0] || "A"}
-                        </div>
-                        {!collapsed && (
-                            <div className="min-w-0">
-                                <p className="font-bold text-slate-900 dark:text-white tracking-tight truncate">
-                                    {app?.name || "ArCommerze"}
-                                </p>
-                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                                    Admin
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                        {filteredNav.map((item) => {
-                            const Icon = item.icon;
-                            const active =
-                                url === item.href ||
-                                (!item.exact &&
-                                    url.startsWith(item.href + "/")) ||
-                                (item.href === "/admin/team" &&
-                                    (url.startsWith("/admin/staff") ||
-                                        url.startsWith("/admin/roles")));
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    title={
-                                        collapsed ? t(item.label) : undefined
-                                    }
-                                    className={clsx(
-                                        "flex items-center gap-3 rounded-xl text-sm font-medium transition-premium",
-                                        collapsed
-                                            ? "justify-center p-3"
-                                            : "px-3.5 py-2.5",
-                                        active
-                                            ? "admin-nav-active"
-                                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50",
-                                    )}
+                        {theme.logo ? (
+                            <img
+                                src={theme.logo}
+                                alt={app?.name || "Store"}
+                                className={clsx(
+                                    "object-contain shrink-0",
+                                    collapsed ? "h-9 w-9" : "h-10 w-auto max-w-[160px]",
+                                )}
+                            />
+                        ) : (
+                            <>
+                                <div
+                                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0"
+                                    style={{
+                                        background: "linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary))",
+                                    }}
                                 >
-                                    <Icon
-                                        size={18}
-                                        strokeWidth={active ? 2.25 : 1.75}
-                                    />
-                                    {!collapsed && (
-                                        <span className="truncate">
-                                            {t(item.label)}
-                                        </span>
-                                    )}
-                                    {!collapsed && active && (
-                                        <ChevronRight
-                                            size={14}
-                                            className="ml-auto opacity-80"
-                                        />
-                                    )}
-                                </Link>
-                            );
-                        })}
+                                    {app?.name?.[0] || "A"}
+                                </div>
+                                {!collapsed && (
+                                    <div className="min-w-0">
+                                        <p className="font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                                            {app?.name || "ArCommerze"}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider truncate">
+                                            {branding.site_tagline || "Admin Panel"}
+                                        </p>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </Link>
+
+                    <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+                        {filteredNavGroups.map((group) => (
+                            <div key={group.label}>
+                                {!collapsed && (
+                                    <p className="px-3.5 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        {group.label}
+                                    </p>
+                                )}
+                                <div className="space-y-1">
+                                    {group.items.map((item) => {
+                                        const Icon = item.icon;
+                                        const active =
+                                            url === item.href ||
+                                            (!item.exact &&
+                                                url.startsWith(item.href + "/")) ||
+                                            (item.href === "/admin/orders" && isOrderSection) ||
+                                            (item.href === "/admin/team" &&
+                                                (url.startsWith("/admin/staff") ||
+                                                    url.startsWith("/admin/roles")));
+                                        return (
+                                            <Link
+                                                key={item.href}
+                                                href={item.href}
+                                                title={
+                                                    collapsed ? t(item.label) : undefined
+                                                }
+                                                className={clsx(
+                                                    "flex items-center gap-3 rounded-xl text-sm font-medium transition-premium",
+                                                    collapsed
+                                                        ? "justify-center p-3"
+                                                        : "px-3.5 py-2.5",
+                                                    active
+                                                        ? "admin-nav-active"
+                                                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50",
+                                                )}
+                                            >
+                                                <Icon
+                                                    size={18}
+                                                    strokeWidth={active ? 2.25 : 1.75}
+                                                />
+                                                {!collapsed && (
+                                                    <span className="truncate">
+                                                        {item.label?.startsWith("nav.") ||
+                                                        item.label?.startsWith("settings.")
+                                                            ? t(item.label)
+                                                            : item.label}
+                                                    </span>
+                                                )}
+                                                {!collapsed && active && (
+                                                    <ChevronRight
+                                                        size={14}
+                                                        className="ml-auto opacity-80"
+                                                    />
+                                                )}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
                     </nav>
+
+                    {!collapsed && (
+                        <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+                            <Link
+                                href="/"
+                                target="_blank"
+                                className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-primary/40 hover:bg-primary/5 transition-premium"
+                            >
+                                <ExternalLink size={14} />
+                                View Storefront
+                            </Link>
+                        </div>
+                    )}
                 </aside>
 
                 <div className="flex-1 flex flex-col min-w-0">
@@ -497,9 +473,22 @@ export default function AdminLayout({
                         alertCount={alertCount}
                     />
 
+                    {isOrderSection && can("orders.manage") && (
+                        <SubNav
+                            links={orderLinks.filter(
+                                (l) =>
+                                    (!l.module || modules.includes(l.module)) &&
+                                    (!l.permission || can(l.permission)),
+                            )}
+                            url={url}
+                            t={t}
+                            can={can}
+                        />
+                    )}
                     {(url.startsWith("/admin/products") ||
                         url.startsWith("/admin/categories") ||
-                        url.startsWith("/admin/brands")) &&
+                        url.startsWith("/admin/brands") ||
+                        url.startsWith("/admin/inventory")) &&
                         can("products.manage") && (
                             <SubNav
                                 links={catalogLinks}
@@ -540,7 +529,9 @@ export default function AdminLayout({
                     {(url.startsWith("/admin/settings") ||
                         url.startsWith("/admin/audit-logs") ||
                         url.startsWith("/admin/activity-logs") ||
-                        url.startsWith("/admin/notification-logs")) && (
+                        url.startsWith("/admin/notification-logs") ||
+                        url.startsWith("/admin/shipping-zones") ||
+                        url.startsWith("/admin/payment-transactions")) && (
                         <SubNav
                             links={settingsLinks}
                             url={url}

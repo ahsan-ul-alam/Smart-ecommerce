@@ -41,10 +41,10 @@ class CheckoutController extends Controller
         $rewards = $this->rewardsContext($request, $cart);
 
         return Inertia::render('Shop/Checkout', [
-            'cart' => $formatted,
+            'checkoutCart' => $formatted,
             'rewards' => $rewards,
             'divisions' => $this->locations->divisions(),
-            'paymentMethods' => $this->paymentService->enabledPaymentMethods(),
+            'paymentMethods' => $this->paymentService->enabledPaymentMethods()->values()->all(),
             'user' => $request->user() ? [
                 'name' => $request->user()->name,
                 'email' => $request->user()->email,
@@ -150,6 +150,7 @@ class CheckoutController extends Controller
             'wallet_balance' => (float) ($wallet?->balance ?? 0),
             'point_value' => $this->loyalty->pointValue(),
             'min_redeem_points' => $this->loyalty->minRedeemPoints(),
+            'min_redeem' => $this->loyalty->minRedeemPoints(),
             'max_loyalty_discount' => $this->loyalty->isEnabled() && $loyaltyAccount
                 ? $this->loyalty->previewRedemption($user, $loyaltyAccount->points, $afterCoupon)['discount']
                 : 0,

@@ -12,8 +12,13 @@ class EnsureUserIsAdmin
     {
         $user = $request->user();
 
-        if (! $user || ! $user->isAdmin()) {
-            abort(403, 'Unauthorized access to admin panel.');
+        if (! $user) {
+            return redirect()->guest(route('login', ['portal' => 'admin']));
+        }
+
+        if (! $user->isAdmin()) {
+            return redirect()->route('account.dashboard')
+                ->with('error', 'You do not have permission to access the admin panel.');
         }
 
         return $next($request);

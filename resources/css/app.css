@@ -122,6 +122,7 @@
 
     .admin-shell-bg {
         background-color: var(--admin-content-bg);
+        background-image: var(--admin-mesh-bg, none);
     }
 
     .admin-sidebar {
@@ -748,7 +749,14 @@
     }
 
     .nav-pill-active {
-        @apply bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400;
+        background: color-mix(in srgb, var(--color-brand-primary) 12%, transparent);
+        color: var(--color-brand-primary);
+        font-weight: 600;
+    }
+
+    .dark .nav-pill-active {
+        background: color-mix(in srgb, var(--color-brand-primary) 22%, transparent);
+        color: color-mix(in srgb, var(--color-brand-primary) 85%, white);
     }
 
     .nav-pill-inactive {

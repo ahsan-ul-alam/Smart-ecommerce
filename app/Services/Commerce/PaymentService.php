@@ -5,6 +5,7 @@ namespace App\Services\Commerce;
 use App\Domain\Enums\IntegrationType;
 use App\Domain\Enums\PaymentMethod;
 use App\Domain\Enums\PaymentStatus;
+use App\Models\Integration;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
 use App\Services\Integrations\IntegrationManager;
@@ -19,29 +20,42 @@ class PaymentService
 
     public function enabledPaymentMethods(): Collection
     {
-        $online = $this->integrations->getEnabled(IntegrationType::Payment)
-            ->whereIn('provider', ['bkash', 'nagad', 'sslcommerz', 'aamarpay', 'stripe', 'paypal'])
-            ->pluck('provider')
-            ->all();
+        $methods = $this->integrations->getEnabled(IntegrationType::Payment)
+            ->map(function (Integration $integration) {
+                $method = PaymentMethod::tryFrom($integration->provider);
 
-        $methods = collect([
-            ['value' => PaymentMethod::Cod->value, 'label' => PaymentMethod::Cod->label(), 'enabled' => true],
-        ]);
+                if (! $method) {
+                    return null;
+                }
 
-        foreach ([
-            'bkash' => 'bKash',
-            'nagad' => 'Nagad',
-            'sslcommerz' => 'SSLCommerz',
-            'aamarpay' => 'aamarPay',
-            'stripe' => 'Stripe',
-            'paypal' => 'PayPal',
-        ] as $key => $label) {
-            if (in_array($key, $online, true)) {
-                $methods->push(['value' => $key, 'label' => $label, 'enabled' => true]);
-            }
+                return [
+                    'value' => $method->value,
+                    'label' => $integration->label ?: $method->label(),
+                    'enabled' => true,
+                    'priority' => $integration->priority,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        if ($methods->doesntContain(fn (array $m) => $m['value'] === PaymentMethod::Cod->value)) {
+            $cod = Integration::query()
+                ->where('type', IntegrationType::Payment)
+                ->where('provider', PaymentMethod::Cod->value)
+                ->first();
+
+            $methods->prepend([
+                'value' => PaymentMethod::Cod->value,
+                'label' => $cod?->label ?: PaymentMethod::Cod->label(),
+                'enabled' => true,
+                'priority' => $cod?->priority ?? -1,
+            ]);
         }
 
-        return $methods->filter(fn ($m) => $m['enabled'])->values();
+        return $methods
+            ->sortBy('priority')
+            ->map(fn (array $m) => collect($m)->except('priority')->all())
+            ->values();
     }
 
     public function initiate(Order $order): array

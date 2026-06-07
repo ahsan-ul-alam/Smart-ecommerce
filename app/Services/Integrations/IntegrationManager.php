@@ -29,7 +29,7 @@ class IntegrationManager
     public function getEnabled(IntegrationType $type): Collection
     {
         return Integration::query()
-            ->where('type', $type)
+            ->where('type', $type->value)
             ->where('is_enabled', true)
             ->orderBy('priority')
             ->get();
@@ -64,7 +64,7 @@ class IntegrationManager
         }
 
         $integration = Integration::query()
-            ->where('type', $type)
+            ->where('type', $type->value)
             ->where('provider', $provider)
             ->first();
 
@@ -93,10 +93,19 @@ class IntegrationManager
     {
         $priority = 0;
         foreach ($providers as $key => $label) {
-            Integration::query()->updateOrCreate(
-                ['type' => $type, 'provider' => $key],
-                ['label' => is_string($label) ? $label : $key, 'priority' => $priority++]
-            );
+            $resolvedLabel = is_array($label) ? ($label['label'] ?? $key) : (is_string($label) ? $label : $key);
+            $integration = Integration::query()->firstOrNew([
+                'type' => $type->value,
+                'provider' => $key,
+            ]);
+
+            if (! $integration->exists) {
+                $integration->is_enabled = $key === 'cod';
+            }
+
+            $integration->label = $resolvedLabel;
+            $integration->priority = $priority++;
+            $integration->save();
         }
     }
 }

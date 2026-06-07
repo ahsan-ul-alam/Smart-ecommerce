@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\InventoryController;
@@ -68,6 +69,8 @@ use Inertia\Inertia;
 Route::post('/locale', [\App\Http\Controllers\LocaleController::class, 'update'])->name('locale.update');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::redirect('/checkout', '/shop/checkout');
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
@@ -160,6 +163,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
+Route::redirect('/admin/login', '/login?portal=admin');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
@@ -205,6 +210,8 @@ Route::prefix('account')->middleware(['auth', 'verified'])->name('account.')->gr
 
 Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');
     Route::middleware('module:analytics')->group(function () {
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
@@ -238,9 +245,12 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('orders/{order}/packing-slip', [OrderController::class, 'packingSlip'])->name('orders.packing-slip');
     Route::get('return-requests', [\App\Http\Controllers\Admin\ReturnRequestController::class, 'index'])->name('return-requests.index');
     Route::patch('return-requests/{returnRequest}', [\App\Http\Controllers\Admin\ReturnRequestController::class, 'update'])->name('return-requests.update');
+    Route::post('orders/{order}/advance', [OrderController::class, 'advanceStatus'])->name('orders.advance');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment');
     Route::patch('orders/{order}/note', [OrderController::class, 'updateNote'])->name('orders.note');
+    Route::post('orders/{order}/partial-refund', [OrderController::class, 'partialRefund'])->name('orders.partial-refund');
+    Route::post('orders/{order}/retry-payment', [OrderController::class, 'retryPayment'])->name('orders.retry-payment');
     Route::post('orders/{order}/shipment', [ShipmentController::class, 'store'])->name('orders.shipment');
     Route::post('orders/{order}/shipment/sync', [ShipmentController::class, 'sync'])->name('orders.shipment.sync');
 

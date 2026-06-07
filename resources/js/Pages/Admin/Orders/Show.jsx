@@ -1,215 +1,103 @@
-import { Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Printer, RefreshCw } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { useState, useCallback } from 'react';
 import AdminLayout from '../../../Layouts/AdminLayout';
-import { formatShippingAddress } from '../../../utils/formatShippingAddress';
-import Button from '../../../Components/UI/Button';
-import Select from '../../../Components/UI/Select';
-import Textarea from '../../../Components/UI/Textarea';
 import FlashMessage from '../../../Components/UI/FlashMessage';
-import { Card, CardBody, CardHeader } from '../../../Components/UI/Card';
+import OrderDetailHeader from '../../../Components/Admin/Orders/OrderDetailHeader';
+import OrderMetricsRow from '../../../Components/Admin/Orders/OrderMetricsRow';
+import OrderProgressTimeline from '../../../Components/Admin/Orders/OrderProgressTimeline';
+import OrderItemsTable from '../../../Components/Admin/Orders/OrderItemsTable';
+import OrderCustomerCard from '../../../Components/Admin/Orders/OrderCustomerCard';
+import OrderActivityFeed from '../../../Components/Admin/Orders/OrderActivityFeed';
+import OrderInternalNotes from '../../../Components/Admin/Orders/OrderInternalNotes';
+import OrderDiscussion from '../../../Components/Admin/Orders/OrderDiscussion';
+import OrderSummaryCard from '../../../Components/Admin/Orders/OrderSummaryCard';
+import OrderShipmentCard from '../../../Components/Admin/Orders/OrderShipmentCard';
+import OrderPaymentCard from '../../../Components/Admin/Orders/OrderPaymentCard';
+import OrderQuickActions from '../../../Components/Admin/Orders/OrderQuickActions';
+import OrderRefundModal from '../../../Components/Admin/Orders/OrderRefundModal';
 
-const formatPrice = (n) => `৳${Number(n).toLocaleString('en-BD')}`;
+export default function OrderShow({
+    order,
+    workflowSteps = [],
+    nextStatuses = [],
+    defaultNext = null,
+    statuses,
+    paymentStatuses,
+    couriers = [],
+}) {
+    const [refundOpen, setRefundOpen] = useState(false);
 
-export default function OrderShow({ order, statuses, paymentStatuses, couriers = [] }) {
-    const statusForm = useForm({ status: order.status, note: '' });
-    const paymentForm = useForm({ payment_status: order.payment_status });
-    const noteForm = useForm({ admin_note: order.admin_note || '' });
-    const shipmentForm = useForm({ courier: couriers[0]?.value ?? 'pathao' });
+    const handleHeaderAction = useCallback((action) => {
+        switch (action) {
+            case 'courier':
+                document.getElementById('shipment-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                break;
+            case 'sms':
+                if (order.customer_phone) {
+                    window.open(`sms:${order.customer_phone}?body=${encodeURIComponent(`Regarding your order ${order.order_number}: `)}`, '_blank');
+                }
+                break;
+            case 'refund':
+                setRefundOpen(true);
+                break;
+            case 'return':
+                router.patch(`/admin/orders/${order.id}/status`, { status: 'returned' }, { preserveScroll: true });
+                break;
+            default:
+                break;
+        }
+    }, [order]);
 
     return (
         <AdminLayout title={`Order ${order.order_number}`}>
             <FlashMessage />
 
-            <div className="flex flex-wrap items-center gap-4 mb-4">
-                <Link href="/admin/orders" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-teal-700">
-                    <ArrowLeft size={16} /> Back to orders
-                </Link>
-                {order.source === 'pos' ? (
-                    <Link href={`/admin/pos/receipt/${order.id}`} className="inline-flex items-center gap-1 text-sm text-teal-700 hover:underline">
-                        <Printer size={16} /> Print receipt
-                    </Link>
-                ) : (
-                    <>
-                        <Link href={`/admin/orders/${order.id}/invoice`} className="inline-flex items-center gap-1 text-sm text-teal-700 hover:underline">
-                            <Printer size={16} /> Print invoice
-                        </Link>
-                        <Link href={`/admin/orders/${order.id}/packing-slip`} className="inline-flex items-center gap-1 text-sm text-teal-700 hover:underline">
-                            <Printer size={16} /> Packing slip
-                        </Link>
-                    </>
-                )}
-            </div>
+            <div className="space-y-5 sm:space-y-6">
+                <OrderDetailHeader order={order} couriers={couriers} onAction={handleHeaderAction} />
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div className="xl:col-span-2 space-y-6">
-                    <Card>
-                        <CardHeader title="Order Items" />
-                        <CardBody className="p-0">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b text-left text-slate-500">
-                                        <th className="px-6 py-3">Product</th>
-                                        <th className="px-6 py-3">SKU</th>
-                                        <th className="px-6 py-3">Qty</th>
-                                        <th className="px-6 py-3">Price</th>
-                                        <th className="px-6 py-3 text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {order.items?.map((item) => (
-                                        <tr key={item.id}>
-                                            <td className="px-6 py-3 font-medium">{item.product_name}</td>
-                                            <td className="px-6 py-3 font-mono text-xs text-slate-400">{item.product_sku}</td>
-                                            <td className="px-6 py-3">{item.quantity}</td>
-                                            <td className="px-6 py-3">{formatPrice(item.unit_price)}</td>
-                                            <td className="px-6 py-3 text-right font-medium">{formatPrice(item.total)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </CardBody>
-                    </Card>
+                <OrderMetricsRow order={order} couriers={couriers} />
 
-                    <Card>
-                        <CardHeader title="Shipping Address" />
-                        <CardBody className="text-sm text-slate-600 dark:text-slate-300 space-y-1">
-                            <p className="font-medium text-slate-800 dark:text-white">{order.shipping_address?.name}</p>
-                            <p>{order.shipping_address?.phone}</p>
-                            {formatShippingAddress(order.shipping_address).lines.map((line, i) => (
-                                <p key={i}>{line}</p>
-                            ))}
-                            {order.customer_note && <p className="mt-2 text-slate-500">Note: {order.customer_note}</p>}
-                        </CardBody>
-                    </Card>
+                <OrderProgressTimeline
+                    workflowSteps={workflowSteps}
+                    currentStatus={order.status}
+                    statusLabel={order.status_label}
+                    statusHistories={order.status_histories}
+                />
 
-                    <Card>
-                        <CardHeader title="Status Timeline" />
-                        <CardBody>
-                            <div className="space-y-3">
-                                {order.status_histories?.map((h, i) => (
-                                    <div key={i} className="flex gap-3 text-sm">
-                                        <div className="w-2 h-2 rounded-full bg-teal-600 mt-1.5 shrink-0" />
-                                        <div>
-                                            <p className="font-medium capitalize">{h.status_label}</p>
-                                            {h.note && <p className="text-slate-500">{h.note}</p>}
-                                            <p className="text-xs text-slate-400">{new Date(h.created_at).toLocaleString()}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardBody>
-                    </Card>
-                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+                    <div className="lg:col-span-8 space-y-5 sm:space-y-6">
+                        <OrderItemsTable items={order.items} />
+                        <OrderCustomerCard order={order} />
+                        <OrderActivityFeed statusHistories={order.status_histories} />
+                        <OrderInternalNotes order={order} />
+                        <OrderDiscussion
+                            statusHistories={order.status_histories}
+                            adminNote={order.admin_note}
+                        />
+                    </div>
 
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader title="Summary" />
-                        <CardBody className="space-y-2 text-sm">
-                            <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
-                            {order.discount_amount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatPrice(order.discount_amount)}</span></div>}
-                            <div className="flex justify-between"><span>Shipping</span><span>{formatPrice(order.shipping_amount)}</span></div>
-                            <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total</span><span className="text-teal-700">{formatPrice(order.total)}</span></div>
-                            {order.coupon_code && <p className="text-xs text-slate-400">Coupon: {order.coupon_code}</p>}
-                        </CardBody>
-                    </Card>
-
-                    <Card>
-                        <CardHeader title="Update Status" />
-                        <CardBody>
-                            <form onSubmit={(e) => { e.preventDefault(); statusForm.patch(`/admin/orders/${order.id}/status`); }} className="space-y-3">
-                                <Select label="Status" value={statusForm.data.status} onChange={(e) => statusForm.setData('status', e.target.value)}
-                                    options={statuses.map((s) => ({ value: s.value, label: s.label }))} />
-                                <Textarea label="Note" value={statusForm.data.note} onChange={(e) => statusForm.setData('note', e.target.value)} rows={2} />
-                                <Button type="submit" loading={statusForm.processing} className="w-full">Update Status</Button>
-                            </form>
-                        </CardBody>
-                    </Card>
-
-                    <Card>
-                        <CardHeader title="Payment" />
-                        <CardBody>
-                            <form onSubmit={(e) => { e.preventDefault(); paymentForm.patch(`/admin/orders/${order.id}/payment`); }} className="space-y-3">
-                                <Select value={paymentForm.data.payment_status} onChange={(e) => paymentForm.setData('payment_status', e.target.value)}
-                                    options={paymentStatuses.map((s) => ({ value: s.value, label: s.label }))} />
-                                <Button type="submit" variant="secondary" loading={paymentForm.processing} className="w-full">Update Payment</Button>
-                            </form>
-                        </CardBody>
-                    </Card>
-
-                    <Card>
-                        <CardHeader title="Shipment" />
-                        <CardBody>
-                            {order.shipment ? (
-                                <div className="text-sm space-y-2">
-                                    <p><span className="text-slate-500">Courier:</span> {order.shipment.courier}</p>
-                                    <p><span className="text-slate-500">Tracking:</span> {order.shipment.tracking_id || '—'}</p>
-                                    <p><span className="text-slate-500">Status:</span> {order.shipment.status}</p>
-                                    {order.shipment.tracking_id && (
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            className="w-full"
-                                            onClick={() => router.post(`/admin/orders/${order.id}/shipment/sync`, {}, { preserveScroll: true })}
-                                        >
-                                            <RefreshCw size={16} className="inline mr-1.5" />
-                                            Sync tracking
-                                        </Button>
-                                    )}
-                                </div>
-                            ) : (
-                                <form onSubmit={(e) => { e.preventDefault(); shipmentForm.post(`/admin/orders/${order.id}/shipment`); }} className="space-y-3">
-                                    <Select
-                                        label="Courier"
-                                        value={shipmentForm.data.courier}
-                                        onChange={(e) => shipmentForm.setData('courier', e.target.value)}
-                                        options={couriers}
-                                    />
-                                    <Button type="submit" loading={shipmentForm.processing} className="w-full">Create Shipment</Button>
-                                </form>
-                            )}
-                        </CardBody>
-                    </Card>
-
-                    {order.refundable_remaining > 0 && (
-                        <Card>
-                            <CardHeader title="Partial refund" />
-                            <CardBody>
-                                <form onSubmit={(e) => {
-                                    e.preventDefault();
-                                    const fd = new FormData(e.target);
-                                    router.post(`/admin/orders/${order.id}/partial-refund`, Object.fromEntries(fd), { preserveScroll: true });
-                                }} className="space-y-3">
-                                    <p className="text-xs text-slate-500">Remaining: {formatPrice(order.refundable_remaining)}</p>
-                                    <input name="amount" type="number" step="0.01" max={order.refundable_remaining} className="input-premium w-full" placeholder="Amount" required />
-                                    <Textarea name="note" rows={2} placeholder="Note (optional)" />
-                                    <Button type="submit" variant="secondary" className="w-full">Record refund</Button>
-                                </form>
-                            </CardBody>
-                        </Card>
-                    )}
-
-                    {order.payment_status !== 'paid' && order.payment_method !== 'cod' && (
-                        <Card>
-                            <CardHeader title="Payment" />
-                            <CardBody>
-                                <Button variant="secondary" className="w-full" onClick={() => router.post(`/admin/orders/${order.id}/retry-payment`, {}, { preserveScroll: true })}>
-                                    Retry payment
-                                </Button>
-                            </CardBody>
-                        </Card>
-                    )}
-
-                    <Card>
-                        <CardHeader title="Admin Note" />
-                        <CardBody>
-                            <form onSubmit={(e) => { e.preventDefault(); noteForm.patch(`/admin/orders/${order.id}/note`); }}>
-                                <Textarea value={noteForm.data.admin_note} onChange={(e) => noteForm.setData('admin_note', e.target.value)} rows={3} />
-                                <Button type="submit" variant="secondary" loading={noteForm.processing} className="w-full mt-2">Save Note</Button>
-                            </form>
-                        </CardBody>
-                    </Card>
+                    <div className="lg:col-span-4">
+                        <div className="lg:sticky lg:top-6 space-y-5 sm:space-y-6">
+                            <OrderSummaryCard order={order} />
+                            <OrderShipmentCard order={order} couriers={couriers} />
+                            <OrderPaymentCard
+                                order={order}
+                                paymentStatuses={paymentStatuses}
+                                onRefund={() => setRefundOpen(true)}
+                            />
+                            <OrderQuickActions
+                                order={order}
+                                defaultNext={defaultNext}
+                                nextStatuses={nextStatuses}
+                                statuses={statuses}
+                                onAction={handleHeaderAction}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <OrderRefundModal order={order} open={refundOpen} onClose={() => setRefundOpen(false)} />
         </AdminLayout>
     );
 }
