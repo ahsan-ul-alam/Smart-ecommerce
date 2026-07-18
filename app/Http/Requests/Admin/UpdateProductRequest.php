@@ -37,6 +37,8 @@ class UpdateProductRequest extends FormRequest
             'low_stock_threshold' => ['integer', 'min:0'],
             'track_inventory' => ['boolean'],
             'is_featured' => ['boolean'],
+            'free_shipping' => ['boolean'],
+            'shipping_charge' => ['nullable', 'numeric', 'min:0'],
             'weight' => ['nullable', 'numeric', 'min:0'],
             'tags' => ['nullable', 'array'],
             'seo_title' => ['nullable', 'string', 'max:255'],

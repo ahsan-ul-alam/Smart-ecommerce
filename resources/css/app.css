@@ -46,6 +46,8 @@
         --admin-content-bg: #0b1220;
         --glass-bg: rgb(30 41 59 / 0.88);
         --glass-bg-dark: rgb(15 23 42 / 0.94);
+        /* Soft brand gradient tinted onto a dark base (light version mixes with white). */
+        --shop-gradient-soft: linear-gradient(135deg, color-mix(in srgb, var(--color-brand-primary) 16%, #0f172a), color-mix(in srgb, var(--color-brand-secondary) 12%, #0f172a));
         --glass-border: rgb(255 255 255 / 0.1);
         --glass-border-dark: rgb(71 85 105 / 0.65);
         --color-surface: #1e293b;
@@ -291,6 +293,10 @@
         .product-carousel-track.cols-5 {
             grid-template-columns: repeat(5, minmax(0, 1fr));
         }
+
+        .product-carousel-track.cols-6 {
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
     }
 
     .product-carousel-item {
@@ -326,6 +332,12 @@
         aspect-ratio: 21 / 9;
         min-height: 200px;
         max-height: 400px;
+    }
+
+    /* Hero image stretches to fill the whole banner: no crop, no gaps (may distort
+       if the image aspect ratio differs from the 21:9 frame). */
+    .shop-banner-frame--hero .shop-banner-frame__img {
+        object-fit: fill;
     }
 
     .shop-banner-frame--campaign {

@@ -1,6 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import { Heart, ShoppingCart, Star, Eye } from 'lucide-react';
+import { Heart, ShoppingCart, Star, Eye, Truck } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
 import ProductThumbnail from '../Catalog/ProductThumbnail';
@@ -25,6 +25,7 @@ export default function ProductCard({
     const { t } = useTranslation();
     const { auth } = usePage().props;
     const [adding, setAdding] = useState(false);
+    const [buying, setBuying] = useState(false);
     const [wishlisted, setWishlisted] = useState(wishlistedProp);
 
     const hasSale = product.on_sale
@@ -52,6 +53,17 @@ export default function ProductCard({
         });
     };
 
+    const buyNow = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setBuying(true);
+        router.post('/shop/cart', { product_id: product.id, quantity: 1 }, {
+            preserveScroll: true,
+            onSuccess: () => router.visit('/shop/checkout'),
+            onError: () => setBuying(false),
+        });
+    };
+
     const toggleWishlist = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -75,7 +87,7 @@ export default function ProductCard({
                 href={`/shop/products/${product.slug}`}
                 className={clsx(
                     'relative block overflow-hidden',
-                    catalog ? 'aspect-[4/5] rounded-t-2xl bg-white dark:bg-slate-800' : 'aspect-square bg-slate-100 dark:bg-slate-800',
+                    catalog ? 'aspect-square rounded-t-2xl bg-white dark:bg-slate-800' : 'aspect-square bg-slate-100 dark:bg-slate-800',
                 )}
             >
                 {catalog ? (
@@ -146,7 +158,7 @@ export default function ProductCard({
 
             <div className={clsx(
                 'flex flex-col flex-1',
-                catalog ? 'p-3 sm:p-4 rounded-b-2xl border border-t-0 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800/90' : 'p-4',
+                catalog ? 'p-2.5 sm:p-3 rounded-b-2xl border border-t-0 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800/90' : 'p-3',
             )}>
                 {product.category?.name && (
                     <p className="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wide mb-0.5">
@@ -176,6 +188,12 @@ export default function ProductCard({
                     <ProductPrice product={product} size="sm" />
                 </div>
 
+                {product.free_shipping && (
+                    <p className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <Truck size={12} /> {t('shop.free_delivery', 'Free delivery')}
+                    </p>
+                )}
+
                 {product.track_inventory && showCatalogChrome && (
                     <p className={clsx(
                         'text-[10px] font-semibold mt-1',
@@ -185,18 +203,32 @@ export default function ProductCard({
                     </p>
                 )}
 
-                <button
-                    type="button"
-                    onClick={addToCart}
-                    disabled={adding || outOfStock}
-                    className={clsx(
-                        'w-full flex items-center justify-center gap-1.5 rounded-xl bg-primary text-white font-semibold hover:opacity-90 disabled:opacity-60 transition-premium btn-primary-glow',
-                        catalog ? 'shop-add-cart-btn mt-3' : 'mt-4 gap-2 py-2.5 text-sm',
-                    )}
-                >
-                    <ShoppingCart size={catalog ? 15 : 16} />
-                    {adding ? t('home.adding') : t('shop.add_to_cart')}
-                </button>
+                <div className={clsx('flex items-stretch gap-1.5 mt-auto', catalog ? 'pt-2.5' : 'pt-3')}>
+                    <button
+                        type="button"
+                        onClick={addToCart}
+                        disabled={adding || outOfStock}
+                        aria-label={t('shop.add_to_cart')}
+                        title={t('shop.add_to_cart')}
+                        className={clsx(
+                            'flex items-center justify-center shrink-0 rounded-xl border border-primary text-primary font-semibold hover:bg-primary hover:text-white disabled:opacity-60 transition-premium',
+                            catalog ? 'w-9' : 'w-10 py-2',
+                        )}
+                    >
+                        <ShoppingCart size={catalog ? 15 : 16} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={buyNow}
+                        disabled={buying || adding || outOfStock}
+                        className={clsx(
+                            'flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-primary text-white font-semibold hover:opacity-90 disabled:opacity-60 transition-premium btn-primary-glow',
+                            catalog ? 'shop-add-cart-btn' : 'py-2.5 text-sm',
+                        )}
+                    >
+                        {buying ? t('home.adding') : t('shop.buy_now')}
+                    </button>
+                </div>
             </div>
         </article>
     );

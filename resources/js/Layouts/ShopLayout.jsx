@@ -14,6 +14,37 @@ import LanguageSwitcher from '../Components/UI/LanguageSwitcher';
 import ThemeToggle from '../Components/UI/ThemeToggle';
 import { useSyncLocale } from '../hooks/useSyncLocale';
 
+function matchUrl(current, target) {
+    if (!target) return false;
+    if (target.includes('?')) return current.includes(target.slice(target.indexOf('?') + 1));
+    if (target === '/') return current === '/';
+    return current.startsWith(target);
+}
+
+// Admin-managed menu items may point to external URLs or open in a new tab,
+// which Inertia's <Link> can't do — fall back to a plain anchor in that case.
+function MenuLink({ href, newTab, className, onClick, children }) {
+    const external = newTab || /^https?:\/\//i.test(href);
+    if (external) {
+        return (
+            <a
+                href={href}
+                target={newTab ? '_blank' : undefined}
+                rel={newTab ? 'noopener noreferrer' : undefined}
+                className={className}
+                onClick={onClick}
+            >
+                {children}
+            </a>
+        );
+    }
+    return (
+        <Link href={href} className={className} onClick={onClick}>
+            {children}
+        </Link>
+    );
+}
+
 export default function ShopLayout({ children, fullWidth = false }) {
     useSyncLocale();
     const { t } = useTranslation();
@@ -23,25 +54,49 @@ export default function ShopLayout({ children, fullWidth = false }) {
     } = usePage().props;
     const categories = shopNav.categories ?? [];
 
-    const primaryNav = useMemo(() => [
-        { href: '/shop/products', label: t('nav.all_products'), match: (u) => u.startsWith('/shop/products') && !u.includes('featured') },
-        { href: '/shop/products?featured=1', label: t('nav.featured'), match: (u) => u.includes('featured=1') },
-        { href: '/shop/flash-sales', label: t('nav.flash_sale'), module: 'flash_sale', accent: true, match: (u) => u.startsWith('/shop/flash-sales') },
-        { href: '/shop/contact', label: t('nav.contact'), match: (u) => u.startsWith('/shop/contact') },
-    ], [t]);
+    const menus = shopNav.menus ?? {};
 
-    const footerShop = useMemo(() => [
-        { href: '/shop/products', label: t('footer.all_products') },
-        { href: '/shop/products?featured=1', label: t('nav.featured') },
-        { href: '/shop/cart', label: t('nav.cart') },
-        { href: '/wishlist', label: t('nav.wishlist'), auth: true },
-    ], [t]);
+    const primaryNav = useMemo(() => {
+        if (menus.header?.length) {
+            return menus.header.map((m) => ({
+                href: m.url,
+                label: m.label,
+                newTab: m.open_in_new_tab,
+                accent: /flash-?sale/i.test(m.url),
+                match: (u) => matchUrl(u, m.url),
+            }));
+        }
+        return [
+            { href: '/shop/products', label: t('nav.all_products'), match: (u) => u.startsWith('/shop/products') && !u.includes('featured') },
+            { href: '/shop/products?featured=1', label: t('nav.featured'), match: (u) => u.includes('featured=1') },
+            { href: '/shop/flash-sales', label: t('nav.flash_sale'), module: 'flash_sale', accent: true, match: (u) => u.startsWith('/shop/flash-sales') },
+            { href: '/shop/track', label: 'Track Order', match: (u) => u.startsWith('/shop/track') },
+            { href: '/shop/contact', label: t('nav.contact'), match: (u) => u.startsWith('/shop/contact') },
+        ];
+    }, [t, menus]);
 
-    const footerSupport = useMemo(() => [
-        { href: '/shop/faq', label: t('shop.faq') },
-        { href: '/shop/contact', label: t('nav.contact') },
-        { href: '/newsletter/unsubscribe', label: t('footer.newsletter') },
-    ], [t]);
+    const footerShop = useMemo(() => {
+        if (menus.footer_shop?.length) {
+            return menus.footer_shop.map((m) => ({ href: m.url, label: m.label, newTab: m.open_in_new_tab }));
+        }
+        return [
+            { href: '/shop/products', label: t('footer.all_products') },
+            { href: '/shop/products?featured=1', label: t('nav.featured') },
+            { href: '/shop/cart', label: t('nav.cart') },
+            { href: '/wishlist', label: t('nav.wishlist'), auth: true },
+        ];
+    }, [t, menus]);
+
+    const footerSupport = useMemo(() => {
+        if (menus.footer_support?.length) {
+            return menus.footer_support.map((m) => ({ href: m.url, label: m.label, newTab: m.open_in_new_tab }));
+        }
+        return [
+            { href: '/shop/faq', label: t('shop.faq') },
+            { href: '/shop/contact', label: t('nav.contact') },
+            { href: '/newsletter/unsubscribe', label: t('footer.newsletter') },
+        ];
+    }, [t, menus]);
     const itemCount = cartSummary?.item_count ?? 0;
     const newsletter = useForm({ email: '' });
     const [mobileMenu, setMobileMenu] = useState(false);
@@ -49,7 +104,13 @@ export default function ShopLayout({ children, fullWidth = false }) {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchCategory, setSearchCategory] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggest, setShowSuggest] = useState(false);
+    const [suggestLoading, setSuggestLoading] = useState(false);
+    const [activeSuggest, setActiveSuggest] = useState(-1);
     const userMenuRef = useRef(null);
+    const searchRef = useRef(null);
+    const mobileSearchRef = useRef(null);
 
     const currentUrl = url ?? (typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/');
 
@@ -68,6 +129,75 @@ export default function ShopLayout({ children, fullWidth = false }) {
         return () => document.removeEventListener('click', close);
     }, []);
 
+    useEffect(() => {
+        const closeSuggest = (e) => {
+            const inDesktop = searchRef.current?.contains(e.target);
+            const inMobile = mobileSearchRef.current?.contains(e.target);
+            if (!inDesktop && !inMobile) setShowSuggest(false);
+        };
+        document.addEventListener('click', closeSuggest);
+        return () => document.removeEventListener('click', closeSuggest);
+    }, []);
+
+    // Lock background scroll while the mobile drawer is open.
+    useEffect(() => {
+        document.body.style.overflow = mobileMenu ? 'hidden' : '';
+        return () => { document.body.style.overflow = ''; };
+    }, [mobileMenu]);
+
+    // Debounced AJAX product suggestions for the header search bar.
+    useEffect(() => {
+        const term = searchQuery.trim();
+        if (term.length < 2) {
+            setSuggestions([]);
+            setSuggestLoading(false);
+            return undefined;
+        }
+        setSuggestLoading(true);
+        const controller = new AbortController();
+        const timer = setTimeout(() => {
+            const params = new URLSearchParams({ q: term });
+            if (searchCategory) params.set('category', searchCategory);
+            fetch(`/shop/search/suggestions?${params.toString()}`, {
+                headers: { Accept: 'application/json' },
+                signal: controller.signal,
+            })
+                .then((r) => (r.ok ? r.json() : { products: [] }))
+                .then((data) => {
+                    setSuggestions(data.products ?? []);
+                    setActiveSuggest(-1);
+                    setSuggestLoading(false);
+                })
+                .catch((err) => {
+                    if (err.name !== 'AbortError') setSuggestLoading(false);
+                });
+        }, 250);
+        return () => { clearTimeout(timer); controller.abort(); };
+    }, [searchQuery, searchCategory]);
+
+    const gotoProduct = (slug) => {
+        setShowSuggest(false);
+        setSuggestions([]);
+        setMobileMenu(false);
+        router.visit(`/shop/products/${slug}`);
+    };
+
+    const onSearchKeyDown = (e) => {
+        if (!showSuggest || suggestions.length === 0) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveSuggest((i) => Math.min(i + 1, suggestions.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveSuggest((i) => Math.max(i - 1, -1));
+        } else if (e.key === 'Enter' && activeSuggest >= 0) {
+            e.preventDefault();
+            gotoProduct(suggestions[activeSuggest].slug);
+        } else if (e.key === 'Escape') {
+            setShowSuggest(false);
+        }
+    };
+
     const subscribe = (e) => {
         e.preventDefault();
         newsletter.post('/newsletter/subscribe', { preserveScroll: true, onSuccess: () => newsletter.reset() });
@@ -79,12 +209,58 @@ export default function ShopLayout({ children, fullWidth = false }) {
             search: searchQuery || undefined,
             category: searchCategory || undefined,
         });
+        setShowSuggest(false);
         setMobileMenu(false);
     };
 
     const isActive = (item) => (item.match ? item.match(currentUrl) : currentUrl === item.href);
     const isAdmin = auth.user?.roles?.some((r) => ['super_admin', 'admin', 'staff'].includes(r));
     const storeEmail = branding.store_email;
+
+    const renderSuggestions = () => {
+        if (!showSuggest || searchQuery.trim().length < 2) return null;
+        return (
+            <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
+                {suggestions.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-slate-400">
+                        {suggestLoading ? `${t('shop.searching', 'Searching')}…` : t('shop.no_results', 'No products found')}
+                    </p>
+                ) : (
+                    <>
+                        {suggestions.map((p, i) => (
+                            <button
+                                type="button"
+                                key={p.id}
+                                onMouseEnter={() => setActiveSuggest(i)}
+                                onClick={() => gotoProduct(p.slug)}
+                                className={clsx(
+                                    'w-full flex items-center gap-3 px-3 py-2 text-left transition-colors',
+                                    i === activeSuggest ? 'bg-slate-100 dark:bg-slate-700/60' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40',
+                                )}
+                            >
+                                {p.image ? (
+                                    <img src={p.image} alt="" className="h-10 w-10 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0" />
+                                ) : (
+                                    <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-700 shrink-0" />
+                                )}
+                                <span className="flex-1 min-w-0">
+                                    <span className="block text-sm font-medium text-slate-800 dark:text-white truncate">{p.name}</span>
+                                    {p.category && <span className="block text-xs text-slate-400 truncate">{p.category}</span>}
+                                </span>
+                                <span className="text-sm font-semibold text-primary shrink-0">৳{Number(p.price).toLocaleString('en-BD')}</span>
+                            </button>
+                        ))}
+                        <button
+                            type="submit"
+                            className="w-full px-4 py-2.5 text-sm font-semibold text-primary hover:bg-slate-50 dark:hover:bg-slate-700/40 border-t border-slate-100 dark:border-slate-700 text-center"
+                        >
+                            {t('shop.see_all_results', 'See all results')}
+                        </button>
+                    </>
+                )}
+            </div>
+        );
+    };
 
     return (
         <ToastProvider>
@@ -125,7 +301,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                             )}
                         </Link>
 
-                        <form onSubmit={submitSearch} className="hidden md:flex flex-1 max-w-2xl mx-2 lg:mx-6">
+                        <form ref={searchRef} onSubmit={submitSearch} className="hidden md:flex flex-1 max-w-2xl mx-2 lg:mx-6 relative">
                             <div className="shop-search-bar w-full flex">
                                 <div className="relative shrink-0">
                                     <select
@@ -143,7 +319,10 @@ export default function ShopLayout({ children, fullWidth = false }) {
                                 <input
                                     type="search"
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={(e) => { setSearchQuery(e.target.value); setShowSuggest(true); }}
+                                    onFocus={() => setShowSuggest(true)}
+                                    onKeyDown={onSearchKeyDown}
+                                    autoComplete="off"
                                     placeholder={t('shop.search_placeholder')}
                                     className="flex-1 min-w-0 px-4 py-3 text-sm border-0 bg-white dark:bg-slate-800 focus:outline-none focus:ring-0"
                                 />
@@ -155,13 +334,15 @@ export default function ShopLayout({ children, fullWidth = false }) {
                                     <Search size={20} />
                                 </button>
                             </div>
+                            {renderSuggestions()}
                         </form>
 
                         <nav className="hidden xl:flex items-center gap-0.5 ml-auto" aria-label="Main">
                             {navItems.map((item) => (
-                                <Link
+                                <MenuLink
                                     key={item.href}
                                     href={item.href}
+                                    newTab={item.newTab}
                                     className={clsx(
                                         'px-3 py-2 rounded-lg text-sm font-medium transition-premium whitespace-nowrap',
                                         isActive(item)
@@ -173,7 +354,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                                 >
                                     {item.accent && <Zap size={14} className="inline mr-1 -mt-0.5 fill-amber-400" />}
                                     {item.label}
-                                </Link>
+                                </MenuLink>
                             ))}
                         </nav>
 
@@ -262,58 +443,96 @@ export default function ShopLayout({ children, fullWidth = false }) {
                         </div>
                     </div>
 
-                    {mobileMenu && (
-                        <div className="xl:hidden pb-4 border-t border-slate-200/60 dark:border-slate-700/60 pt-4 space-y-4">
-                            <form onSubmit={submitSearch} className="flex flex-col gap-2 sm:flex-row">
-                                <select
-                                    value={searchCategory}
-                                    onChange={(e) => setSearchCategory(e.target.value)}
-                                    className="input-premium sm:w-40"
-                                >
-                                    <option value="">{t('shop.all_categories')}</option>
-                                    {categories.map((c) => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
+                </div>
+            </header>
+
+            {/* Mobile off-canvas drawer (must live outside the header — its backdrop-filter
+                would otherwise trap position:fixed to the header box). */}
+            <div className={clsx('xl:hidden fixed inset-0 z-[70]', mobileMenu ? '' : 'pointer-events-none')} aria-hidden={!mobileMenu}>
+                <div
+                    className={clsx('absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300', mobileMenu ? 'opacity-100' : 'opacity-0')}
+                    onClick={() => setMobileMenu(false)}
+                />
+                <div
+                    className={clsx(
+                        'absolute inset-y-0 left-0 w-[86%] max-w-sm bg-white dark:bg-slate-900 shadow-2xl flex flex-col transition-transform duration-300 ease-out',
+                        mobileMenu ? 'translate-x-0' : '-translate-x-full',
+                    )}
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/60 dark:border-slate-700/60">
+                        <span className="font-bold text-slate-900 dark:text-white">{t('nav.menu', 'Menu')}</span>
+                        <button
+                            type="button"
+                            onClick={() => setMobileMenu(false)}
+                            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                            aria-label="Close menu"
+                        >
+                            <X size={22} />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        <form onSubmit={submitSearch} className="flex flex-col gap-2">
+                            <select
+                                value={searchCategory}
+                                onChange={(e) => setSearchCategory(e.target.value)}
+                                className="input-premium"
+                            >
+                                <option value="">{t('shop.all_categories')}</option>
+                                {categories.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                            <div ref={mobileSearchRef} className="relative">
                                 <input
                                     type="search"
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={(e) => { setSearchQuery(e.target.value); setShowSuggest(true); }}
+                                    onFocus={() => setShowSuggest(true)}
+                                    onKeyDown={onSearchKeyDown}
+                                    autoComplete="off"
                                     placeholder={t('shop.search_placeholder')}
-                                    className="input-premium flex-1"
+                                    className="input-premium w-full"
                                 />
-                                <button type="submit" className="px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold">
-                                    {t('common.search')}
-                                </button>
-                            </form>
-                            <div className="flex items-center gap-2 sm:hidden">
-                                <LanguageSwitcher />
-                                <ThemeToggle />
+                                {renderSuggestions()}
                             </div>
-                            <nav className="grid grid-cols-2 gap-2 text-sm">
-                                <Link href="/" className="p-3 rounded-xl bg-white dark:bg-slate-800 border font-medium flex items-center gap-2" onClick={() => setMobileMenu(false)}>
-                                    <Home size={16} /> {t('nav.home')}
-                                </Link>
-                                {navItems.map((item) => (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={clsx('p-3 rounded-xl bg-white dark:bg-slate-800 border font-medium', item.accent && 'text-amber-700')}
-                                        onClick={() => setMobileMenu(false)}
-                                    >
-                                        {item.label}
-                                    </Link>
-                                ))}
-                            </nav>
-                            {!auth.user && (
-                                <Link href="/login" className="block text-center py-3 rounded-xl bg-primary text-white font-semibold" onClick={() => setMobileMenu(false)}>
-                                    {t('nav.sign_in')}
-                                </Link>
-                            )}
+                            <button type="submit" className="px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold">
+                                {t('common.search')}
+                            </button>
+                        </form>
+
+                        <div className="flex items-center gap-2">
+                            <LanguageSwitcher />
+                            <ThemeToggle />
                         </div>
-                    )}
+
+                        <nav className="grid grid-cols-1 gap-1.5 text-sm">
+                            <Link href="/" className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 font-medium flex items-center gap-2" onClick={() => setMobileMenu(false)}>
+                                <Home size={16} /> {t('nav.home')}
+                            </Link>
+                            {navItems.map((item) => (
+                                <MenuLink
+                                    key={item.href}
+                                    href={item.href}
+                                    newTab={item.newTab}
+                                    className={clsx('p-3 rounded-xl bg-slate-50 dark:bg-slate-800 font-medium', item.accent && 'text-amber-700')}
+                                    onClick={() => setMobileMenu(false)}
+                                >
+                                    {item.label}
+                                </MenuLink>
+                            ))}
+                        </nav>
+
+                        {!auth.user && (
+                            <Link href="/login" className="block text-center py-3 rounded-xl bg-primary text-white font-semibold" onClick={() => setMobileMenu(false)}>
+                                {t('nav.sign_in')}
+                            </Link>
+                        )}
+                    </div>
                 </div>
-            </header>
+            </div>
 
             <main className="flex-1 w-full">
                 {fullWidth ? children : <div className="shop-container py-6 lg:py-10">{children}</div>}
@@ -340,7 +559,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                             <ul className="space-y-2 text-sm text-slate-500">
                                 {footerShop.filter((l) => !l.auth || auth.user).map((link) => (
                                     <li key={link.href}>
-                                        <Link href={link.href} className="hover:text-primary transition-colors">{link.label}</Link>
+                                        <MenuLink href={link.href} newTab={link.newTab} className="hover:text-primary transition-colors">{link.label}</MenuLink>
                                     </li>
                                 ))}
                             </ul>
@@ -350,7 +569,7 @@ export default function ShopLayout({ children, fullWidth = false }) {
                             <ul className="space-y-2 text-sm text-slate-500">
                                 {footerSupport.map((link) => (
                                     <li key={link.href}>
-                                        <Link href={link.href} className="hover:text-primary transition-colors">{link.label}</Link>
+                                        <MenuLink href={link.href} newTab={link.newTab} className="hover:text-primary transition-colors">{link.label}</MenuLink>
                                     </li>
                                 ))}
                                 {footerPages.map((p) => (

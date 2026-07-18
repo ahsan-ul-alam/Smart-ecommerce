@@ -16,7 +16,7 @@ return new class extends Migration
             $table->boolean('is_enabled')->default(false);
             $table->boolean('is_sandbox')->default(true);
             $table->unsignedInteger('priority')->default(0);
-            $table->json('credentials')->nullable();
+            $table->text('credentials')->nullable(); // encrypted blob (see SafeEncryptedArray cast), not JSON
             $table->json('config')->nullable();
             $table->json('webhook_config')->nullable();
             $table->timestamps();

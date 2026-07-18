@@ -44,6 +44,13 @@ class IntegrationController extends Controller
         return back()->with('success', 'Integration updated.');
     }
 
+    public function regenerateWebhookToken(Integration $integration): RedirectResponse
+    {
+        $integration->regenerateWebhookToken();
+
+        return back()->with('success', 'Webhook token regenerated. Update it in the courier panel.');
+    }
+
     public function test(Integration $integration, IntegrationManager $manager): RedirectResponse
     {
         try {

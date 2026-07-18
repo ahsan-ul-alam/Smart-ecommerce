@@ -156,7 +156,7 @@ class CartService
             $cart->items->isNotEmpty()
         );
 
-        $shipping = $shippingResult['shipping'];
+        $shipping = $this->applyProductShippingOverrides($cart, $shippingResult['shipping']);
         $taxable = max(0, $subtotal - $discount);
         $tax = $this->calculateTax($taxable);
         $total = max(0, $taxable + $shipping + $tax);
@@ -177,6 +177,34 @@ class CartService
             'total' => round($total, 2),
             'item_count' => $cart->items->sum('quantity'),
         ];
+    }
+
+    /**
+     * Apply per-product delivery overrides on top of the zone/threshold charge.
+     * Each item resolves to: free_shipping → 0, explicit shipping_charge → that value,
+     * otherwise the standard zone charge. The order pays the highest of these, so a
+     * free-delivery product ships free (a whole cart of them is free), while a product
+     * with a fixed charge always costs at least that much.
+     */
+    protected function applyProductShippingOverrides(Cart $cart, float $baseShipping): float
+    {
+        if ($cart->items->isEmpty()) {
+            return 0.0;
+        }
+
+        $perItem = $cart->items->map(function ($item) use ($baseShipping) {
+            $product = $item->product;
+            if ($product?->free_shipping) {
+                return 0.0;
+            }
+            if ($product && $product->shipping_charge !== null) {
+                return (float) $product->shipping_charge;
+            }
+
+            return $baseShipping;
+        });
+
+        return round((float) $perItem->max(), 2);
     }
 
     public function calculateTotalsWithRewards(Cart $cart, ?User $user, int $loyaltyPoints = 0, float $walletAmount = 0, ?string $district = null): array
@@ -244,6 +272,8 @@ class CartService
                 'line_total' => $item->lineTotal(),
                 'stock_quantity' => $this->availableStock($item->product, $item->variant),
                 'track_inventory' => $item->product->track_inventory,
+                'free_shipping' => (bool) $item->product->free_shipping,
+                'shipping_charge' => $item->product->shipping_charge !== null ? (float) $item->product->shipping_charge : null,
                 'image' => MediaUrl::resolve(
                     ($item->product->relationLoaded('images')
                         ? ($item->product->images->firstWhere('is_primary', true) ?? $item->product->images->first())

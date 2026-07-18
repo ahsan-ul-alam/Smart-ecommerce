@@ -1,19 +1,27 @@
 import { Link } from '@inertiajs/react';
 import clsx from 'clsx';
 
-export default function Pagination({ links = [], meta }) {
-    const pageLinks = Array.isArray(links) ? links : Object.values(links ?? {});
+export default function Pagination({ links = [], meta, className }) {
+    // The renderable page-number links are an array of {url, label, active}. For API-resource
+    // collections that array lives at `meta.links`; a raw paginator passes it as `links` itself.
+    // The {first, last, prev, next} object form is NOT usable here (Object.values yields nulls
+    // that crash the map), so only accept real arrays.
+    const pageLinks = Array.isArray(meta?.links)
+        ? meta.links
+        : Array.isArray(links)
+            ? links
+            : [];
 
     if (!meta || meta.last_page <= 1 || pageLinks.length === 0) return null;
 
     return (
-        <div className="flex items-center justify-between mt-4 text-sm text-slate-500">
+        <div className={clsx('flex items-center justify-between mt-4 text-sm text-slate-500', className)}>
             <span>
                 Showing {meta.from}–{meta.to} of {meta.total}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
                 {pageLinks.map((link, i) => {
-                    if (i === 0 || i === pageLinks.length - 1) return null;
+                    if (!link || i === 0 || i === pageLinks.length - 1) return null;
                     return (
                         <Link
                             key={i}

@@ -38,6 +38,9 @@ return new class extends Migration
         });
 
         Schema::table('cart_items', function (Blueprint $table) {
+            // Give the cart_id foreign key its own supporting index before dropping
+            // the composite unique, otherwise MySQL refuses (index needed by the FK).
+            $table->index('cart_id');
             $table->dropUnique(['cart_id', 'product_id']);
         });
     }
@@ -46,6 +49,7 @@ return new class extends Migration
     {
         Schema::table('cart_items', function (Blueprint $table) {
             $table->unique(['cart_id', 'product_id']);
+            $table->dropIndex(['cart_id']);
             $table->dropConstrainedForeignId('product_variant_id');
         });
 

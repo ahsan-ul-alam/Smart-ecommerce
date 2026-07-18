@@ -18,7 +18,7 @@ class Product extends Model
         'short_description', 'description', 'type', 'status',
         'price', 'compare_price', 'cost_price', 'stock_quantity',
         'low_stock_threshold', 'track_inventory', 'is_featured',
-        'weight', 'tags', 'seo_title', 'seo_description',
+        'weight', 'free_shipping', 'shipping_charge', 'tags', 'seo_title', 'seo_description',
     ];
 
     protected function casts(): array
@@ -31,6 +31,8 @@ class Product extends Model
             'cost_price' => 'decimal:2',
             'track_inventory' => 'boolean',
             'is_featured' => 'boolean',
+            'free_shipping' => 'boolean',
+            'shipping_charge' => 'decimal:2',
             'tags' => 'array',
         ];
     }
@@ -95,5 +97,10 @@ class Product extends Model
     public function approvedReviews(): HasMany
     {
         return $this->reviews()->where('is_approved', true);
+    }
+
+    public function questions(): HasMany
+    {
+        return $this->hasMany(ProductQuestion::class);
     }
 }

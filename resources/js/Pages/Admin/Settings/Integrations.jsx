@@ -103,7 +103,22 @@ const credentialFields = {
 
 export default function Integrations({ type, integrations }) {
     const [editing, setEditing] = useState(null);
+    const [copied, setCopied] = useState(null);
     const form = useForm({ is_enabled: false, is_sandbox: true, credentials: {} });
+
+    const copy = (text, key) => {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text);
+            setCopied(key);
+            setTimeout(() => setCopied(null), 1500);
+        }
+    };
+
+    const regenerateToken = (integration) => {
+        if (confirm('Regenerate the webhook token? The old token stops working until you update it in the courier panel.')) {
+            router.post(`/admin/integrations/${integration.id}/webhook-token`, {}, { preserveScroll: true });
+        }
+    };
 
     const openEdit = (integration) => {
         setEditing(integration.id);
@@ -175,6 +190,49 @@ export default function Integrations({ type, integrations }) {
                                     <Button variant="secondary" onClick={() => openEdit(integration)}>Configure</Button>
                                 </div>
                             </div>
+
+                            {integration.webhook_url && (
+                                <div className="mt-4 pt-4 border-t space-y-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Status webhook</p>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            Paste these into the courier panel’s webhook settings so delivery status
+                                            updates sync back to your orders automatically.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 mb-1">Callback URL</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                readOnly
+                                                value={integration.webhook_url}
+                                                onFocus={(e) => e.target.select()}
+                                                className="input-premium flex-1 text-sm font-mono"
+                                            />
+                                            <Button type="button" variant="secondary" onClick={() => copy(integration.webhook_url, `url-${integration.id}`)}>
+                                                {copied === `url-${integration.id}` ? 'Copied!' : 'Copy'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 mb-1">Auth Token (Bearer)</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                readOnly
+                                                value={integration.webhook_token}
+                                                onFocus={(e) => e.target.select()}
+                                                className="input-premium flex-1 text-sm font-mono"
+                                            />
+                                            <Button type="button" variant="secondary" onClick={() => copy(integration.webhook_token, `tok-${integration.id}`)}>
+                                                {copied === `tok-${integration.id}` ? 'Copied!' : 'Copy'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <button type="button" onClick={() => regenerateToken(integration)} className="text-xs text-primary font-semibold hover:underline">
+                                        Regenerate token
+                                    </button>
+                                </div>
+                            )}
 
                             {editing === integration.id && (
                                 <form onSubmit={submit} className="mt-4 pt-4 border-t space-y-4">

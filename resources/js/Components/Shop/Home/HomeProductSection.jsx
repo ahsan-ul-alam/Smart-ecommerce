@@ -1,7 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 import ShopSection from '../ShopSection';
-import ProductCarousel, { ProductCarouselItem } from './ProductCarousel';
 import ProductCard from '../ProductCard';
 
 export default function HomeProductSection({
@@ -23,19 +22,18 @@ export default function HomeProductSection({
                 </Link>
             }
         >
-            <ProductCarousel>
-                {products.map((product) => (
-                    <ProductCarouselItem key={product.id}>
-                        <ProductCard
-                            product={product}
-                            catalog
-                            compact
-                            showQuickView={false}
-                            wishlisted={wishlistProductIds.includes(product.id)}
-                        />
-                    </ProductCarouselItem>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                {products.slice(0, 6).map((product) => (
+                    <ProductCard
+                        key={product.id}
+                        product={product}
+                        catalog
+                        compact
+                        showQuickView={false}
+                        wishlisted={wishlistProductIds.includes(product.id)}
+                    />
                 ))}
-            </ProductCarousel>
+            </div>
         </ShopSection>
     );
 }

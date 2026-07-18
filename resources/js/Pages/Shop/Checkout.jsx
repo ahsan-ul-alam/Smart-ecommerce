@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowLeft, Tag } from 'lucide-react';
+import { ArrowLeft, Tag, Truck } from 'lucide-react';
 import clsx from 'clsx';
 import ShopLayout from '../../Layouts/ShopLayout';
 import BangladeshAddressFields from '../../Components/Address/BangladeshAddressFields';
@@ -313,6 +313,15 @@ export default function Checkout({
                                         <p className="mt-0.5 text-xs text-slate-500">
                                             {formatPrice(item.unit_price)} each
                                         </p>
+                                        {item.free_shipping ? (
+                                            <p className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <Truck size={12} /> Free delivery
+                                            </p>
+                                        ) : item.shipping_charge != null && (
+                                            <p className="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-slate-500">
+                                                <Truck size={12} /> Delivery: {formatPrice(item.shipping_charge)}
+                                            </p>
+                                        )}
                                     </div>
                                     <p className="shrink-0 text-sm font-bold text-slate-900 dark:text-white">
                                         {formatPrice(item.line_total)}

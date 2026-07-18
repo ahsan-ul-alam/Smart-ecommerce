@@ -171,7 +171,7 @@ export default function ProductsIndex({
 
                         {productList.length ? (
                             <>
-                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                                     {productList.map((product) => (
                                         <ProductCard
                                             key={product.id}

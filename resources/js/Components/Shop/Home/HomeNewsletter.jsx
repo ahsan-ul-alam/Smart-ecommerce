@@ -16,7 +16,7 @@ export default function HomeNewsletter() {
                 <div className="w-12 h-12 mx-auto rounded-2xl bg-primary/15 text-primary flex items-center justify-center mb-4">
                     <Mail size={24} />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Stay in the loop</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-gray-600">Stay in the loop</h2>
                 <p className="text-slate-600 dark:text-slate-400 mt-2 max-w-md mx-auto text-sm sm:text-base">
                     Get exclusive deals, new arrivals, and flash sale alerts delivered to your inbox.
                 </p>

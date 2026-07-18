@@ -48,6 +48,8 @@ class ProductResource extends JsonResource
             'track_inventory' => $this->track_inventory,
             'is_featured' => $this->is_featured,
             'is_low_stock' => $this->isLowStock(),
+            'free_shipping' => (bool) $this->free_shipping,
+            'shipping_charge' => $this->shipping_charge !== null ? (float) $this->shipping_charge : null,
             'weight' => $this->weight,
             'tags' => $this->tags ?? [],
             'seo_title' => $this->seo_title,

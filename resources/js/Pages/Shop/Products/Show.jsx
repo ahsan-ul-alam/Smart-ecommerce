@@ -21,7 +21,16 @@ const trustBadges = [
     { icon: ShieldCheck, title: '100% genuine', desc: 'Authentic products' },
 ];
 
-export default function ProductShow({ product, related, reviews = [], avgRating = 0, inWishlist = false }) {
+export default function ProductShow({
+    product,
+    related,
+    recentlyViewed = [],
+    reviews = [],
+    ratingBreakdown = [],
+    questions = [],
+    avgRating = 0,
+    inWishlist = false,
+}) {
     const { auth } = usePage().props;
     const gallery = product.images?.length ? product.images : (product.image ? [{ url: product.image, id: 0 }] : []);
     const [activeImage, setActiveImage] = useState(gallery[0]?.url ?? null);
@@ -199,6 +208,16 @@ export default function ProductShow({ product, related, reviews = [], avgRating 
                     {product.track_inventory && (
                         <p className={clsx('mt-2 text-sm font-medium', inStock ? 'text-emerald-600' : 'text-red-600')}>
                             {inStock ? `${stockQty} in stock` : 'Out of stock'}
+                        </p>
+                    )}
+
+                    {product.free_shipping ? (
+                        <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                            <Truck size={16} /> Free delivery on this product
+                        </p>
+                    ) : product.shipping_charge != null && (
+                        <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300">
+                            <Truck size={16} /> Delivery charge: ৳{Number(product.shipping_charge).toLocaleString('en-BD')}
                         </p>
                     )}
 

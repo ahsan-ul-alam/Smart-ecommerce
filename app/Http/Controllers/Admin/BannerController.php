@@ -8,15 +8,24 @@ use App\Support\MediaUrl;
 use App\Support\PromotionalImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BannerController extends Controller
 {
+    /** Where a banner is shown on the homepage. */
+    private const POSITIONS = [
+        ['value' => 'homepage_hero', 'label' => 'Hero slider (top)'],
+        ['value' => 'homepage_campaign', 'label' => 'Special offers (campaign row)'],
+        ['value' => 'homepage', 'label' => 'Both hero & campaign'],
+    ];
+
     public function index(): Response
     {
         return Inertia::render('Admin/Cms/Banners', [
             'bannerSizeHint' => PromotionalImage::RECOMMENDED_LABEL,
+            'positions' => self::POSITIONS,
             'banners' => Banner::query()
                 ->orderBy('sort_order')
                 ->get()
@@ -38,7 +47,7 @@ class BannerController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'image' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'link' => ['nullable', 'string', 'max:500'],
-            'position' => ['required', 'string', 'max:100'],
+            'position' => ['required', Rule::in(array_column(self::POSITIONS, 'value'))],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
         ]);
@@ -63,7 +72,7 @@ class BannerController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'link' => ['nullable', 'string', 'max:500'],
-            'position' => ['required', 'string', 'max:100'],
+            'position' => ['required', Rule::in(array_column(self::POSITIONS, 'value'))],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
             'remove_image' => ['nullable', 'boolean'],

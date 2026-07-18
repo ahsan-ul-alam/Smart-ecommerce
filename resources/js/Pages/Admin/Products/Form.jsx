@@ -19,6 +19,7 @@ const defaultProduct = {
     price: 0, compare_price: '', cost_price: '',
     stock_quantity: 0, low_stock_threshold: 5,
     track_inventory: true, is_featured: false,
+    free_shipping: false, shipping_charge: '',
     weight: '', tags: [], seo_title: '', seo_description: '',
 };
 
@@ -160,6 +161,36 @@ export default function ProductForm({ product, categories, brands, vendors = [],
                                 />
                             )}
                             <Input label="Weight (kg)" type="number" min="0" step="0.01" value={data.weight} onChange={(e) => setData('weight', e.target.value)} />
+                        </CardBody>
+                    </Card>
+
+                    <Card>
+                        <CardHeader title="Delivery" />
+                        <CardBody className="space-y-4">
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={data.free_shipping}
+                                    onChange={(e) => setData('free_shipping', e.target.checked)}
+                                    className="rounded"
+                                />
+                                Free delivery for this product
+                            </label>
+                            <Input
+                                label="Custom delivery charge (৳)"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={data.shipping_charge ?? ''}
+                                onChange={(e) => setData('shipping_charge', e.target.value)}
+                                placeholder="Leave blank for default shipping"
+                                disabled={data.free_shipping}
+                                error={errors.shipping_charge}
+                            />
+                            <p className="text-xs text-slate-500">
+                                Free delivery overrides everything. Otherwise a custom charge replaces the standard
+                                delivery fee for orders containing this product. Leave blank to use the normal zone rate.
+                            </p>
                         </CardBody>
                     </Card>
                 </div>

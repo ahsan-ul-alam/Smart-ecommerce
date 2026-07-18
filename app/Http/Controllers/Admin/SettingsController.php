@@ -238,20 +238,33 @@ class SettingsController extends Controller
     {
         $integrationType = IntegrationType::tryFrom($type) ?? IntegrationType::Payment;
 
+        $integrations = Integration::query()
+            ->where('type', $integrationType)
+            ->orderBy('priority')
+            ->get()
+            ->map(function (Integration $integration) use ($integrationType) {
+                $data = [
+                    'id' => $integration->id,
+                    'type' => $integration->type->value,
+                    'provider' => $integration->provider,
+                    'label' => $integration->label,
+                    'is_enabled' => $integration->is_enabled,
+                    'is_sandbox' => $integration->is_sandbox,
+                    'priority' => $integration->priority,
+                ];
+
+                // Couriers get a status-callback URL + bearer token to paste into the courier panel.
+                if ($integrationType === IntegrationType::Courier) {
+                    $data['webhook_url'] = route('webhooks.courier', $integration->provider);
+                    $data['webhook_token'] = $integration->ensureWebhookToken();
+                }
+
+                return $data;
+            });
+
         return Inertia::render('Admin/Settings/Integrations', [
             'type' => $type,
-            'integrations' => Integration::query()
-                ->where('type', $integrationType)
-                ->orderBy('priority')
-                ->get([
-                    'id',
-                    'type',
-                    'provider',
-                    'label',
-                    'is_enabled',
-                    'is_sandbox',
-                    'priority',
-                ]),
+            'integrations' => $integrations,
         ]);
     }
 }

@@ -103,6 +103,7 @@ const catalogLinks = [
 
 const cmsLinks = [
     { href: "/admin/cms/banners", label: "Banners" },
+    { href: "/admin/cms/menus", label: "Menus" },
     { href: "/admin/cms/homepage", label: "Homepage" },
     { href: "/admin/cms/pages", label: "Pages" },
     { href: "/admin/cms/faqs", label: "FAQs" },

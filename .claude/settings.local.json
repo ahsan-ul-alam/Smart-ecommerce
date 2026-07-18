@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(wsl -e bash -lc \"cd ~/projects/smart-ecommerce && test -f .env && echo 'ENV_EXISTS' || echo 'NO_ENV'; grep -E '^APP_KEY=' .env; grep -E '^DB_' .env\")",
+      "PowerShell(wsl -e bash -lc \"cd ~/projects/smart-ecommerce && php artisan config:clear && php artisan cache:clear; php artisan migrate:status 2>&1 | head -40\")",
+      "PowerShell(wsl -e bash -lc \"cd ~/projects/smart-ecommerce && php artisan migrate:status 2>&1 | grep -c Pending; php artisan tinker --execute='echo \\\\\"users=\\\\\".DB::table\\(\\\\\"users\\\\\"\\)->count\\(\\).\\\\\" products=\\\\\".\\(Schema::hasTable\\(\\\\\"products\\\\\"\\)?DB::table\\(\\\\\"products\\\\\"\\)->count\\(\\):0\\).\\\\\" orders=\\\\\".\\(Schema::hasTable\\(\\\\\"orders\\\\\"\\)?DB::table\\(\\\\\"orders\\\\\"\\)->count\\(\\):0\\);' 2>&1 | tail -3\")",
+      "PowerShell(wsl -e bash -lc 'cd ~/projects/smart-ecommerce && php artisan tinker --execute='\"'\"'echo \"users=\".DB::table\\(\"users\"\\)->count\\(\\); echo \" products=\".\\(Schema::hasTable\\(\"products\"\\)?DB::table\\(\"products\"\\)->count\\(\\):\"no-table\"\\); echo \" orders=\".\\(Schema::hasTable\\(\"orders\"\\)?DB::table\\(\"orders\"\\)->count\\(\\):\"no-table\"\\);'\"'\"' 2>&1 | tail -2')",
+      "PowerShell(wsl -e bash -lc 'cd ~/projects/smart-ecommerce && php artisan migrate:fresh --seed --force 2>&1 | tail -80')",
+      "PowerShell(wsl -e bash -lc 'cd ~/projects/smart-ecommerce && php artisan migrate:fresh --seed --force 2>&1 | tail -90')"
+    ]
+  }
+}

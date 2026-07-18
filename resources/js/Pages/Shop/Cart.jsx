@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { Minus, Plus, Trash2, Truck } from 'lucide-react';
 import ShopLayout from '../../Layouts/ShopLayout';
 import ShopPageHeader from '../../Components/Shop/ShopPageHeader';
 import Button from '../../Components/UI/Button';
@@ -61,6 +61,15 @@ export default function Cart({ cart: initialCart }) {
                                             </Link>
                                             <p className="text-xs text-slate-400 font-mono">{item.sku}</p>
                                             <p className="text-teal-700 font-bold mt-1">{formatPrice(item.unit_price)}</p>
+                                            {item.free_shipping ? (
+                                                <p className="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                                    <Truck size={13} /> Free delivery
+                                                </p>
+                                            ) : item.shipping_charge != null && (
+                                                <p className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-slate-500">
+                                                    <Truck size={13} /> Delivery: {formatPrice(item.shipping_charge)}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="flex flex-col items-end gap-2">
                                             <div className="flex items-center border border-slate-300 dark:border-slate-600 rounded-lg">

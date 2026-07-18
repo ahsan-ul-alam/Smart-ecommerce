@@ -91,6 +91,8 @@ Route::middleware('module:special_product')->group(function () {
 
 Route::prefix('shop')->name('shop.')->group(function () {
     Route::get('/products', [ShopProductController::class, 'index'])->name('products.index');
+    Route::get('/search/suggestions', [ShopProductController::class, 'suggest'])->name('search.suggestions');
+    Route::post('/products/{slug}/questions', [ShopProductController::class, 'askQuestion'])->name('products.questions');
     Route::get('/products/{slug}', [ShopProductController::class, 'show'])->name('products.show');
     Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])
         ->middleware(['auth', 'module:reviews'])
@@ -132,6 +134,9 @@ Route::prefix('shop')->name('shop.')->group(function () {
     Route::post('/checkout/shipping-preview', [CheckoutController::class, 'shippingPreview'])->name('checkout.shipping-preview');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/orders/{orderNumber}/confirmation', [CheckoutController::class, 'confirmation'])->name('orders.confirmation');
+
+    Route::get('/track', [\App\Http\Controllers\Shop\OrderTrackController::class, 'index'])->name('track');
+    Route::post('/track', [\App\Http\Controllers\Shop\OrderTrackController::class, 'lookup'])->name('track.lookup');
 
     Route::match(['get', 'post'], '/payments/bkash/callback', [PaymentController::class, 'bkashCallback'])->name('payments.bkash.callback');
     Route::get('/payments/bkash/demo', [PaymentController::class, 'bkashDemo'])->name('payments.bkash.demo');
@@ -347,6 +352,12 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::delete('cms/homepage/{section}', [HomepageSectionController::class, 'destroy'])->name('cms.homepage.destroy');
     Route::patch('cms/homepage/reorder', [HomepageSectionController::class, 'reorder'])->name('cms.homepage.reorder');
 
+    Route::get('cms/menus', [\App\Http\Controllers\Admin\MenuController::class, 'index'])->name('cms.menus');
+    Route::post('cms/menus', [\App\Http\Controllers\Admin\MenuController::class, 'store'])->name('cms.menus.store');
+    Route::put('cms/menus/{menu}', [\App\Http\Controllers\Admin\MenuController::class, 'update'])->name('cms.menus.update');
+    Route::delete('cms/menus/{menu}', [\App\Http\Controllers\Admin\MenuController::class, 'destroy'])->name('cms.menus.destroy');
+    Route::patch('cms/menus/reorder', [\App\Http\Controllers\Admin\MenuController::class, 'reorder'])->name('cms.menus.reorder');
+
     Route::get('cms/pages', [AdminPageController::class, 'index'])->name('cms.pages');
     Route::get('cms/faqs', [\App\Http\Controllers\Admin\FaqController::class, 'index'])->name('cms.faqs');
     Route::post('cms/faqs', [\App\Http\Controllers\Admin\FaqController::class, 'store'])->name('cms.faqs.store');
@@ -389,6 +400,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
 
     Route::patch('integrations/{integration}', [IntegrationController::class, 'update'])->name('integrations.update');
     Route::post('integrations/{integration}/test', [IntegrationController::class, 'test'])->name('integrations.test');
+    Route::post('integrations/{integration}/webhook-token', [IntegrationController::class, 'regenerateWebhookToken'])->name('integrations.webhook-token');
 
     Route::middleware('module:pos')->prefix('pos')->name('pos.')->group(function () {
         Route::get('/', [PosController::class, 'index'])->name('index');

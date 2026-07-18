@@ -225,6 +225,12 @@ class HomePageService
             ]);
         }
 
+        // If at least one slide has an image, drop the image-less (gradient) slides
+        // so no gradient placeholder shows alongside real banner images.
+        if ($slides->contains(fn ($s) => ! empty($s['image']))) {
+            $slides = $slides->filter(fn ($s) => ! empty($s['image']));
+        }
+
         if ($slides->isEmpty()) {
             return collect([[
                 'id' => 'default',

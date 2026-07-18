@@ -25,16 +25,35 @@ class SteadfastCourier extends BaseCourier
             ];
         }
 
-        $response = Http::withHeaders($this->headers($credentials))
-            ->timeout(30)
-            ->post($this->baseUrl().'/create_order', [
-                'invoice' => $payload['order_number'] ?? Str::upper(Str::random(10)),
-                'recipient_name' => $payload['recipient_name'] ?? 'Customer',
-                'recipient_phone' => $this->normalizePhone($payload['recipient_phone'] ?? '01700000000'),
-                'recipient_address' => $payload['address'] ?? 'Dhaka, Bangladesh',
-                'cod_amount' => (float) ($payload['cod_amount'] ?? 0),
-                'note' => 'Order from '.config('arcommerze.name'),
-            ]);
+        // Sandbox: simulate a consignment without hitting the live API (Steadfast has no
+        // public sandbox, and it lets you test the shipment/webhook flow offline).
+        if ($this->integration?->is_sandbox) {
+            return [
+                'provider' => $this->getProvider(),
+                'status' => 'created',
+                'tracking_id' => 'SF-SANDBOX-'.Str::upper(Str::random(8)),
+                'message' => 'Sandbox mode: consignment simulated (no live API call).',
+            ];
+        }
+
+        try {
+            $response = Http::withHeaders($this->headers($credentials))
+                ->timeout(30)
+                ->post($this->baseUrl().'/create_order', [
+                    'invoice' => $payload['order_number'] ?? Str::upper(Str::random(10)),
+                    'recipient_name' => $payload['recipient_name'] ?? 'Customer',
+                    'recipient_phone' => $this->normalizePhone($payload['recipient_phone'] ?? '01700000000'),
+                    'recipient_address' => $payload['address'] ?? 'Dhaka, Bangladesh',
+                    'cod_amount' => (float) ($payload['cod_amount'] ?? 0),
+                    'note' => 'Order from '.config('arcommerze.name'),
+                ]);
+        } catch (\Throwable $e) {
+            return [
+                'provider' => $this->getProvider(),
+                'status' => 'failed',
+                'message' => 'Could not reach Steadfast API: '.$e->getMessage(),
+            ];
+        }
 
         $data = $response->json() ?? [];
 
@@ -65,8 +84,18 @@ class SteadfastCourier extends BaseCourier
             return ['provider' => $this->getProvider(), 'tracking_id' => $trackingId, 'status' => 'unknown'];
         }
 
-        $response = Http::withHeaders($this->headers($credentials))
-            ->get($this->baseUrl().'/status_by_trackingcode/'.urlencode($trackingId));
+        try {
+            $response = Http::withHeaders($this->headers($credentials))
+                ->timeout(30)
+                ->get($this->baseUrl().'/status_by_trackingcode/'.urlencode($trackingId));
+        } catch (\Throwable $e) {
+            return [
+                'provider' => $this->getProvider(),
+                'tracking_id' => $trackingId,
+                'status' => 'failed',
+                'message' => 'Could not reach Steadfast API: '.$e->getMessage(),
+            ];
+        }
 
         $data = $response->json() ?? [];
 

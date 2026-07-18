@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Button from '../../../Components/UI/Button';
 import Input from '../../../Components/UI/Input';
+import Select from '../../../Components/UI/Select';
 import Badge from '../../../Components/UI/Badge';
 import FlashMessage from '../../../Components/UI/FlashMessage';
 import { Card, CardBody, CardHeader } from '../../../Components/UI/Card';
@@ -19,7 +20,7 @@ const empty = {
     remove_image: false,
 };
 
-export default function Banners({ banners }) {
+export default function Banners({ banners, positions = [] }) {
     const [editing, setEditing] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const imageRef = useRef(null);
@@ -126,11 +127,11 @@ export default function Banners({ banners }) {
                                 placeholder="/shop/products"
                                 error={form.errors.link}
                             />
-                            <Input
+                            <Select
                                 label="Position"
                                 value={form.data.position}
                                 onChange={(e) => form.setData('position', e.target.value)}
-                                placeholder="homepage_hero"
+                                options={positions}
                                 error={form.errors.position}
                             />
                             <Input
@@ -140,9 +141,6 @@ export default function Banners({ banners }) {
                                 onChange={(e) => form.setData('sort_order', Number(e.target.value))}
                                 error={form.errors.sort_order}
                             />
-                            <p className="sm:col-span-2 text-xs text-slate-500 -mt-2">
-                                <strong>homepage_hero</strong> — main slider · <strong>homepage_campaign</strong> — promo row · <strong>homepage</strong> — both
-                            </p>
 
                             <div className="sm:col-span-2">
                                 <BannerImageField

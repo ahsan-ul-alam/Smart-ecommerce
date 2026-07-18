@@ -90,6 +90,16 @@ class HandleInertiaRequests extends Middleware
                         'name' => $c->name,
                         'products_count' => $c->products_count,
                     ]),
+                'menus' => \App\Models\MenuItem::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get(['location', 'label', 'url', 'open_in_new_tab'])
+                    ->groupBy('location')
+                    ->map(fn ($group) => $group->map(fn ($m) => [
+                        'label' => $m->label,
+                        'url' => $m->url,
+                        'open_in_new_tab' => $m->open_in_new_tab,
+                    ])->values()),
             ],
             'wishlistCount' => fn () => $request->user()
                 ? $request->user()->wishlists()->count()
